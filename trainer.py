@@ -1,10 +1,9 @@
-import torch, torchtext, nltk
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 import numpy as np
-import re
 import pandas as pd
 from model import CNNSingleValueRanker
 from dataloader import ImageDataSet

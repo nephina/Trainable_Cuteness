@@ -1,0 +1,13 @@
+torch
+torchvision
+tensorboardX
+tensorboard
+PIL
+cv2
+pandas
+numpy
+random
+re
+sys
+os
+PyQt5

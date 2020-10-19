@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import re
 import random
 import sys
 import os
@@ -9,7 +8,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5 import QtCore
 from trainer import trainer
 
-os.environ['LRU_CACHE_CAPACITY']='5'
+os.environ['LRU_CACHE_CAPACITY']='20'
 
 
 class PairwisePrompt(QDialog):
