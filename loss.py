@@ -71,7 +71,7 @@ def pairwise_loss(predictions,ranks,criterion,loss_type):
             loss = order_loss
         else:
             loss = order_loss+beta_dist_loss
-    return loss
+    return loss, order_loss
 
 
 # |  ||

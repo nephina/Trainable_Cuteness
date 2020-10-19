@@ -23,7 +23,10 @@ def train(model, iterator, optimizer, criterion, loss_type = 'order'):
         ranks = batch[1]
         predictions = model(images)
 
-        loss = pairwise_loss(predictions,ranks,criterion,'orderandstdev')
+        loss, order_loss = pairwise_loss(predictions,
+                                        ranks,
+                                        criterion,
+                                        'orderandstdev')
 
         loss.backward()
         optimizer.step()
