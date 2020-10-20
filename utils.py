@@ -33,7 +33,7 @@ def get_saliency_map(image, saliency_map):
 
     image = image.data.cpu().numpy()
     saliency_map = saliency_map.data.cpu().numpy()
-
+    
     saliency_map = saliency_map - saliency_map.min()
     saliency_map = saliency_map / saliency_map.max()
     saliency_map = saliency_map.clip(0,1)

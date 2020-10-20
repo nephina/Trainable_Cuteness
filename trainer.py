@@ -30,14 +30,7 @@ def train(model, iterator, optimizer, criterion, loss_type = 'order'):
         loss.backward()
         optimizer.step()
         model.zero_grad()
-        '''
-        if (i+1) % 10 == 0:      # Wait for several backward steps
-            for gp in model.parameters():
-                if gp.grad is not None:
-                    gp.grad = gp.grad/10
-            optimizer.step()               # Now we can do an optimizer step
-            model.zero_grad()
-        '''
+
         epoch_mean += torch.mean(predictions).item()
         epoch_std += torch.std(predictions).item()
         epoch_order_loss += order_loss.item()
@@ -82,13 +75,13 @@ def trainer(window, Listings):
 
 
     model = CNNSingleValueRanker(image_size=image_size)
-    try:
-        model.load_state_dict(torch.load('RankPrediction-model.pkl'))
-    except:
-        print('no previously existing trained model')
+    #try:
+    #    model.load_state_dict(torch.load('RankPrediction-model.pkl'))
+    #except:
+    #    print('no previously existing trained model')
     model = model.to(device)
     
-    optimizer = torch.optim.Adam([param for param in model.parameters() if param.requires_grad == True])
+    optimizer = torch.optim.Adam([param for param in model.parameters() if param.requires_grad == True],lr=0.001)
 
     criterion = nn.MSELoss()#KLDivLoss(reduction='batchmean')
     criterion.to(device)
@@ -156,7 +149,7 @@ def trainer(window, Listings):
         writer.add_scalar('STD', train_std, epoch)
         epoch += 1
         
-        if epoch % 25 == 0:
+        if epoch % 5 == 0:
             print('Reranking images')
             window  = rerank_images(window)
             window.StatusText.setText('Training the Neural Net')
