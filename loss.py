@@ -38,7 +38,7 @@ def pairwise_loss(predictions,ranks,criterion,loss_type):
     about, but to be honest standard deviation loss is still what I use most of 
     the time anyway. Suprisingly, it is still possible to do SGD, except in our 
     case the example is actually a minibatch of size 2. I've found the standard 
-    deviation loss still works, although training isn't quite as stable.
+    deviation loss still works, although training isn't as stable.
     '''
     order_loss = pair_order_loss(predictions,ranks)
     if loss_type == 'order':

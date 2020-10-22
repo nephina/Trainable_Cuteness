@@ -10,11 +10,11 @@ class ConvBlock(nn.Module):
         self.conv_1 = nn.Conv2d(in_channels,out_channels,3,1,1)
         self.conv_2 = nn.Conv2d(out_channels,out_channels,3,1,1)
         self.conv_3 = nn.Conv2d(out_channels,out_channels,3,1,1)
-        self.skip_conv = nn.Conv2d(in_channels,out_channels,1,1,1)
-        self.act = nn.ReLU()
-        self.batchnorm1 = torch.nn.BatchNorm2d(in_channels)
-        self.batchnorm2 = torch.nn.BatchNorm2d(out_channels)
-        self.batchnorm3 = torch.nn.BatchNorm2d(out_channels)
+        self.skip_conv = nn.Conv2d(in_channels,out_channels,1,1,0)
+        self.act = nn.Tanh()
+        #self.batchnorm1 = torch.nn.BatchNorm2d(in_channels)
+        #self.batchnorm2 = torch.nn.BatchNorm2d(out_channels)
+        #self.batchnorm3 = torch.nn.BatchNorm2d(out_channels)
         self.pool = nn.AvgPool2d(kernel_size=block_resolution_drop)
         self.dropout = nn.Dropout(p=0.5)
         self.init_weights()
@@ -27,14 +27,14 @@ class ConvBlock(nn.Module):
         
     def forward(self, x):
         skip = self.skip_conv(x)
-        x = self.batchnorm1(x)
+        #x = self.batchnorm1(x)
         x = self.conv_1(x)
         x = self.act(x)
-        x = self.batchnorm2(x)
+        #x = self.batchnorm2(x)
         x = self.dropout(x)
         x = self.conv_2(x)
         x = self.act(x)
-        x = self.batchnorm3
+        #x = self.batchnorm3(x)
         x = self.dropout(x)
         x = self.conv_3(x)
         x = self.act(x)
@@ -47,13 +47,13 @@ class ConvBlock(nn.Module):
 class CNNSingleValueRanker(nn.Module):
     def __init__(self,image_size = 64):
         super().__init__()
-        self.n_initial_channels = 3
-        self.n_conv_blocks = 5
+        self.n_initial_channels = 4
+        self.n_conv_blocks = 8
         self.block_resolution_drop = 2
         self.image_size = image_size
         self.conv_blocks = nn.ModuleList()
 
-        channel_expansion = False
+        channel_expansion = True
         for level in range(self.n_conv_blocks):
             if level == 0:
                 self.conv_blocks.append(ConvBlock(3,
@@ -79,21 +79,22 @@ class CNNSingleValueRanker(nn.Module):
             out_conv_channels = self.n_initial_channels*n_final_channels
             out_conv_params = out_conv_pixels*out_conv_channels
         else:
+            out_conv_channels = self.n_initial_channels
             out_conv_params = out_conv_pixels*self.n_initial_channels
         out_conv_params = int(out_conv_params)
-        self.linear1 = nn.Linear(out_conv_params,
-                                 int(0.3*out_conv_params))
-        nn.init.orthogonal_(self.linear1.weight,1./3)
-        self.linear2 = nn.Linear(int(0.3*out_conv_params),1)
+        #self.linear1 = nn.Linear(out_conv_params,
+        #                         int(0.3*out_conv_params))
+        #nn.init.orthogonal_(self.linear1.weight,1./3)
+        self.linear2 = nn.Linear(out_conv_channels,1)
         nn.init.orthogonal_(self.linear2.weight,1./3)
 
-        self.act = nn.ReLU()
+        #self.act = nn.Tanh()
 
     def forward(self,x):
         for level in range(self.n_conv_blocks):
             x = self.conv_blocks[level](x)
         x = x.flatten(start_dim=1)
-        x = self.linear1(x)
-        x = self.act(x)
+        #x = self.linear1(x)
+        #x = self.act(x)
         x = self.linear2(x)
         return x

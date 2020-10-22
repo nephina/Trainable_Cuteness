@@ -75,13 +75,13 @@ def trainer(window, Listings):
 
 
     model = CNNSingleValueRanker(image_size=image_size)
-    #try:
-    #    model.load_state_dict(torch.load('RankPrediction-model.pkl'))
-    #except:
-    #    print('no previously existing trained model')
+    try:
+        model.load_state_dict(torch.load('RankPrediction-model.pkl'))
+    except:
+        print('no previously existing trained model')
     model = model.to(device)
     
-    optimizer = torch.optim.Adam([param for param in model.parameters() if param.requires_grad == True],lr=0.001)
+    optimizer = torch.optim.Adam([param for param in model.parameters() if param.requires_grad == True])
 
     criterion = nn.MSELoss()#KLDivLoss(reduction='batchmean')
     criterion.to(device)
@@ -135,23 +135,23 @@ def trainer(window, Listings):
     train_order_loss = 10e10
     train_std = 0
 
-    while (train_order_loss != 0) or (1-train_std > 0.01):
+    while (train_order_loss != 0) or (1-train_std > 0.1):
         
         trainset,trainloader = shuffle_ranked_pairs(trainset)
 
         train_loss, train_order_loss, train_mean, train_std = train(model, trainloader, optimizer, criterion,loss_type='orderandstdev')
         print(train_loss/(train_std+1.0e-25),train_order_loss,train_mean,train_std)
 
-        torch.save(model.state_dict(), 'RankPrediction-model.pkl')
         writer.add_scalar('Loss over STD', train_loss/(train_std+1.0e-25), epoch)
         writer.add_scalar('Order loss', train_order_loss, epoch)
         writer.add_scalar('Mean', train_mean, epoch)
         writer.add_scalar('STD', train_std, epoch)
         epoch += 1
         
-        if epoch % 5 == 0:
+        if epoch % 1000 == 0:
             print('Reranking images')
             window  = rerank_images(window)
+            torch.save(model.state_dict(), 'RankPrediction-model.pkl')
             window.StatusText.setText('Training the Neural Net')
             window.ProgressBar.setRange(0, 100)
             window.ProgressBar.setValue(0)

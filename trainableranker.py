@@ -1,9 +1,9 @@
 import pandas as pd
-import numpy as np
+from numpy import diff
 import random
 import sys
 import os
-from PyQt5.QtWidgets import (QApplication, QDialog, QGridLayout, QPushButton, QTextEdit, QWidget, QHBoxLayout, QProgressBar, QLabel)
+from PyQt5.QtWidgets import (QApplication, QDialog, QGridLayout, QPushButton, QHBoxLayout, QProgressBar, QLabel)
 from PyQt5.QtGui import QPixmap
 from PyQt5 import QtCore
 from trainer import trainer
@@ -174,7 +174,7 @@ def get_closest_pair():
     global image_list
     image_list.sort_values(by=['Rating'],inplace=True,ascending=False)
     #Toplistings = image_list[0:int(n_total_images*0.2)]
-    deltas = abs(np.diff(image_list['Rating']))
+    deltas = abs(diff(image_list['Rating']))
     deltas = [deltas.tolist()]
     deltas.append([index for index in range(len(deltas[0]))])
     deltas = pd.DataFrame(deltas)

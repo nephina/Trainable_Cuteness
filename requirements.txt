@@ -2,8 +2,8 @@ torch
 torchvision
 tensorboardX
 tensorboard
-PIL
-cv2
+pillow
+opencv-python
 pandas
 numpy
 random
