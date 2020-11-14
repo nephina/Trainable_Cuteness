@@ -23,9 +23,9 @@ class ImageDataSet(Dataset):
 
         augmentations = [transforms.RandomHorizontalFlip(p=0.5),
 
-                         transforms.RandomAffine(10,
-                                                 translate=(0.1,0.1),
-                                                 scale=(0.9,1.1)),
+                         transforms.RandomAffine(30,
+                                                 translate=(0.3,0.3),
+                                                 scale=(0.8,1.2)),
 
                          transforms.ColorJitter(brightness=0.05,
                                                 contrast=0.05,

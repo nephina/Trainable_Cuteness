@@ -107,7 +107,7 @@ def update_step_state(preference):
         pairwise_ranked_images.append([image_list['ImageFile'][list_indices[1]],1])
     total_selection_count[0] += 1
     window.ProgressBar.setValue(total_selection_count[0])
-    if total_selection_count[0] >= 5:
+    if total_selection_count[0] >= 1:
         window.left_image.setPixmap(QPixmap())
         window.right_image.setPixmap(QPixmap())
         run_ai_training()

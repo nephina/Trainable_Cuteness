@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 import numpy as np
 import pandas as pd
-from model import CNNSingleValueRanker
+from model import *
 from dataloader import ImageDataSet
 from loss import pairwise_loss
 
@@ -74,9 +74,10 @@ def trainer(window, Listings):
                             pin_memory=True)
 
 
-    model = CNNSingleValueRanker(image_size=image_size)
+    #model = CNNSingleValueRanker(image_size=image_size)
+    model = resnet18()
     try:
-        model.load_state_dict(torch.load('RankPrediction-model.pkl'))
+        model.load_state_dict(torch.load('RankPrediction-model.pkl', map_location='cpu'))
     except:
         print('no previously existing trained model')
     model = model.to(device)
@@ -121,7 +122,7 @@ def trainer(window, Listings):
         pd_csv = pd.read_csv('Data/RankedPairs.csv').drop(['SortKey'],axis=1)
         trainset = ImageDataSet(pd_csv,image_size,device)
         trainloader = DataLoader(trainset,
-                                batch_size=train_batch_size,
+                                batch_size=200,
                                 num_workers=0,
                                 shuffle=False,
                                 pin_memory=True)
@@ -148,15 +149,15 @@ def trainer(window, Listings):
         writer.add_scalar('STD', train_std, epoch)
         epoch += 1
         
-        if epoch % 1000 == 0:
+        if epoch % 50 == 0:
             print('Reranking images')
-            window  = rerank_images(window)
+            rerank_images(window)
             torch.save(model.state_dict(), 'RankPrediction-model.pkl')
             window.StatusText.setText('Training the Neural Net')
             window.ProgressBar.setRange(0, 100)
             window.ProgressBar.setValue(0)
         
         #window.ProgressBar.setValue(epoch)
-
+    torch.save(model.state_dict(), 'RankPrediction-model.pkl')
     rerank_images(window)
     writer.close()

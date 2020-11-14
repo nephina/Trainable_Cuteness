@@ -6,7 +6,7 @@ import os
 import cv2
 import numpy as np
 import torchvision.transforms as transforms
-from model import CNNSingleValueRanker
+from model import *
 
 
 class NormalizeInverse(transforms.Normalize):
@@ -212,8 +212,9 @@ class FullGradExtractor:
 def compute_saliency(dataloader,image_size):
     maps = []
     device = torch.device('cpu')
-    model = CNNSingleValueRanker(image_size)
-    model.load_state_dict(torch.load('RankPrediction-model.pkl'))
+    #model = CNNSingleValueRanker(image_size)
+    model = resnet18()
+    model.load_state_dict(torch.load('RankPrediction-model.pkl',map_location=torch.device('cpu')))
     model = model.to(device)
     unnormalize = NormalizeInverse(mean = [0, 0, 0],std = [1,1,1])
     for batch_idx, (data, _) in enumerate(dataloader):
