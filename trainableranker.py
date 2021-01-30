@@ -86,7 +86,8 @@ def update_both_image(refinement=False):
 
 def run_ai_training():
     global image_list, n_total_images, pairwise_ranked_images
-    pairwise_ranked_images = remove_conflicts(pairwise_ranked_images)
+    if len(pairwise_ranked_images) > 2:
+        pairwise_ranked_images = remove_conflicts(pairwise_ranked_images)
     final_ranked_pairs = pd.DataFrame(pairwise_ranked_images)
     final_ranked_pairs.columns = ['ImageFile','Rating']
     final_ranked_pairs['SortKey'] = range(len(final_ranked_pairs))
@@ -252,7 +253,8 @@ image_list, n_total_images = read_ranking_file()
 if os.path.exists('Data/RankedPairs.csv'):
     first_prompt_run = [0]
     pairwise_ranked_images = pd.read_csv('Data/RankedPairs.csv').drop(['SortKey'],axis=1).values.tolist()
-    pairwise_ranked_images = remove_conflicts(pairwise_ranked_images)
+    if len(pairwise_ranked_images) > 2:
+        pairwise_ranked_images = remove_conflicts(pairwise_ranked_images)
 list_indices = update_both_image(refinement=False)
 
 sys.exit(app.exec_())
