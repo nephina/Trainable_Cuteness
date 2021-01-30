@@ -1,5 +1,6 @@
 import pandas as pd
 from numpy import diff
+from itertools import combinations
 import random
 import sys
 import os
@@ -107,7 +108,7 @@ def update_step_state(preference):
         pairwise_ranked_images.append([image_list['ImageFile'][list_indices[1]],1])
     total_selection_count[0] += 1
     window.ProgressBar.setValue(total_selection_count[0])
-    if total_selection_count[0] >= 1:
+    if total_selection_count[0] >= 50:
         window.left_image.setPixmap(QPixmap())
         window.right_image.setPixmap(QPixmap())
         run_ai_training()
@@ -194,26 +195,44 @@ def get_topend_close_pair():
     return image_list.iloc[list_indices[0]],image_list.iloc[list_indices[1]],list_indices
 
 def remove_conflicts(pairwise_ranked_images):
-    from itertools import combinations
-    combs = combinations(list(range(int(len(pairwise_ranked_images)/2))),2)
-    combs = list(combs)
-    remove_pairs = []
-    for comb in combs:
-        pair_one = pairwise_ranked_images[int(comb[0]*2):int(comb[0]*2)+2]
-        pair_two = pairwise_ranked_images[int(comb[1]*2):int(comb[1]*2)+2]
-        if pair_one[0][0]==pair_two[0][0] and pair_one[1][0]==pair_two[1][0]:
-            if pair_one[0][1] != pair_two[0][1]:
-                print('You had a conflict between pairs: '+str(comb[0])+' and '+str(comb[1]))
-                remove_pairs.append([comb[0],comb[1]])
 
-        elif pair_one[0][0]==pair_two[1][0] and pair_one[1][0]==pair_two[0][0]:
-            if pair_one[0][1] != pair_two[1][1]:
-                print('You had a conflict between pairs: '+str(comb[0])+' and '+str(comb[1]))
-                remove_pairs.append([comb[0],comb[1]])
+    def get_combs(pairwise_ranked_images):
+        combs = combinations(list(range(int(len(pairwise_ranked_images)/2))),2)
+        combs = list(combs)
+        return combs
 
-    for resolved_num,pair in enumerate(remove_pairs):
-        pairwise_ranked_images.pop(int(pair[0]*2)-2*resolved_num)
-        pairwise_ranked_images.pop(int(pair[0]*2)-2*resolved_num)
+    combs = get_combs(pairwise_ranked_images)
+    remove_pairs = True
+    while remove_pairs:
+        for comb in combs:
+            remove_pairs = False
+            pair_one = pairwise_ranked_images[int(comb[0]*2):int(comb[0]*2)+2]
+            pair_two = pairwise_ranked_images[int(comb[1]*2):int(comb[1]*2)+2]
+            if pair_one[0][0] == pair_two[0][0] and pair_one[1][0] == pair_two[1][0]:
+                if pair_one[0][1] == pair_two[0][1]:
+                    print('You had a duplicate pair: lines '+str((comb[0]+1)*2)+' and '+str((comb[1]+1)*2))
+                    remove_pairs = [comb[0],comb[1]]
+                    break
+                elif pair_one[0][1] != pair_two[0][1]:
+                    print('You had a conflict between pairs: lines '+str((comb[0]+1)*2)+' and '+str((comb[1]+1)*2))
+                    remove_pairs = [comb[0],comb[1]]
+                    break
+
+            elif pair_one[0][0] == pair_two[1][0] and pair_one[1][0] == pair_two[0][0]:
+                if pair_one[0][1] == pair_two[1][1]:
+                    print('You had a duplicate pair: lines '+str((comb[0]+1)*2)+' and '+str((comb[1]+1)*2))
+                    remove_pairs = [comb[0],comb[1]]
+                    break
+                elif pair_one[0][1] != pair_two[1][1]:
+                    print('You had a conflict between pairs: lines '+str((comb[0]+1)*2)+' and '+str((comb[1]+1)*2))
+                    remove_pairs = [comb[0],comb[1]]
+                    break
+
+        if remove_pairs:
+            pairwise_ranked_images.pop(int(remove_pairs[0]*2))
+            pairwise_ranked_images.pop(int((remove_pairs[0]*2)))
+            combs = get_combs(pairwise_ranked_images)
+
     return pairwise_ranked_images
 
 

@@ -362,9 +362,10 @@ def _resnet(
         state_dict = load_state_dict_from_url(model_urls[arch],
                                               progress=progress, map_location='cpu')
         model.load_state_dict(state_dict,)
+        print('loaded pretrained')
     return model
 
-def resnet18(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
+def resnet18(pretrained: bool = True, progress: bool = True, **kwargs: Any) -> ResNet:
     r"""ResNet-18 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
     Args:
@@ -382,8 +383,9 @@ def resnet34(pretrained: bool = False, progress: bool = False, **kwargs: Any) ->
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet34', BasicBlock, [3, 4, 6, 3], pretrained, progress,
+    model = _resnet('resnet34', BasicBlock, [3, 4, 6, 3], pretrained, progress,
                    **kwargs)
+    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
 
 
 def resnet50(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
@@ -393,9 +395,9 @@ def resnet50(pretrained: bool = False, progress: bool = False, **kwargs: Any) ->
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress,
+    model = _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress,
                    **kwargs)
-
+    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
 
 def resnet101(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
     r"""ResNet-101 model from
@@ -404,9 +406,9 @@ def resnet101(pretrained: bool = False, progress: bool = False, **kwargs: Any) -
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet101', Bottleneck, [3, 4, 23, 3], pretrained, progress,
+    model = _resnet('resnet101', Bottleneck, [3, 4, 23, 3], pretrained, progress,
                    **kwargs)
-
+    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
 
 def resnet152(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
     r"""ResNet-152 model from
@@ -415,9 +417,9 @@ def resnet152(pretrained: bool = False, progress: bool = False, **kwargs: Any) -
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet152', Bottleneck, [3, 8, 36, 3], pretrained, progress,
+    model = _resnet('resnet152', Bottleneck, [3, 8, 36, 3], pretrained, progress,
                    **kwargs)
-
+    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
 
 def resnext50_32x4d(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
     r"""ResNeXt-50 32x4d model from
@@ -428,9 +430,9 @@ def resnext50_32x4d(pretrained: bool = False, progress: bool = False, **kwargs: 
     """
     kwargs['groups'] = 32
     kwargs['width_per_group'] = 4
-    return _resnet('resnext50_32x4d', Bottleneck, [3, 4, 6, 3],
+    model = _resnet('resnext50_32x4d', Bottleneck, [3, 4, 6, 3],
                    pretrained, progress, **kwargs)
-
+    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
 
 def resnext101_32x8d(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
     r"""ResNeXt-101 32x8d model from
@@ -441,9 +443,9 @@ def resnext101_32x8d(pretrained: bool = False, progress: bool = False, **kwargs:
     """
     kwargs['groups'] = 32
     kwargs['width_per_group'] = 8
-    return _resnet('resnext101_32x8d', Bottleneck, [3, 4, 23, 3],
+    model = _resnet('resnext101_32x8d', Bottleneck, [3, 4, 23, 3],
                    pretrained, progress, **kwargs)
-
+    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
 
 def wide_resnet50_2(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
     r"""Wide ResNet-50-2 model from
@@ -457,9 +459,9 @@ def wide_resnet50_2(pretrained: bool = False, progress: bool = False, **kwargs: 
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     kwargs['width_per_group'] = 64 * 2
-    return _resnet('wide_resnet50_2', Bottleneck, [3, 4, 6, 3],
+    model = _resnet('wide_resnet50_2', Bottleneck, [3, 4, 6, 3],
                    pretrained, progress, **kwargs)
-
+    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
 
 def wide_resnet101_2(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
     r"""Wide ResNet-101-2 model from
@@ -473,5 +475,6 @@ def wide_resnet101_2(pretrained: bool = False, progress: bool = False, **kwargs:
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     kwargs['width_per_group'] = 64 * 2
-    return _resnet('wide_resnet101_2', Bottleneck, [3, 4, 23, 3],
+    model = _resnet('wide_resnet101_2', Bottleneck, [3, 4, 23, 3],
                    pretrained, progress, **kwargs)
+    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))

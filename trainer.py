@@ -8,6 +8,9 @@ import pandas as pd
 from model import *
 from dataloader import ImageDataSet
 from loss import pairwise_loss
+import logging
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def train(model, iterator, optimizer, criterion, loss_type = 'order'):
 
@@ -18,8 +21,8 @@ def train(model, iterator, optimizer, criterion, loss_type = 'order'):
 
     model.train()
     for batch in iterator:
-        images = batch[0]
-        ranks = batch[1]
+        images = batch[0].to(device,non_blocking=True)
+        ranks = batch[1].to(device,non_blocking=True)
         predictions = model(images)
 
         loss, order_loss = pairwise_loss(predictions,
@@ -31,7 +34,7 @@ def train(model, iterator, optimizer, criterion, loss_type = 'order'):
         optimizer.step()
         model.zero_grad()
 
-        epoch_mean += torch.mean(predictions).item()
+        epoch_mean += torch.mean(predictions).cpu().item()
         epoch_std += torch.std(predictions).item()
         epoch_order_loss += order_loss.item()
         epoch_loss += loss.item()
@@ -46,44 +49,56 @@ def test(window, model, iterator):
     model.eval()
     with torch.no_grad():
         for iteration, batch in enumerate(iterator):
-            images = batch[0]
+            images = batch[0].to(device)
             predictions = torch.flatten(model(images))
-            test_result.extend(predictions.tolist())
+            test_result.extend(predictions.to(torch.device('cpu')).tolist())
             window.ProgressBar.setValue(iteration+1)
     return test_result
 
 def trainer(window, Listings):
     
     #Define the training characteristics
-    train_batch_size = 100
-    full_set_batch_size = 100
+    train_batch_size = 20
+    full_set_batch_size = 1000
     image_size = 256
 
     window.StatusText.setText('Building Training Dataset')
     window.ProgressBar.setRange(0, 100)
     window.ProgressBar.setValue(0)
     
-    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    device = torch.device('cpu')
     pd_csv = pd.read_csv('Data/RankedPairs.csv').drop(['SortKey'],axis=1)
-    trainset = ImageDataSet(pd_csv,image_size,device)
+    trainset = ImageDataSet(pd_csv,image_size)
     trainloader = DataLoader(trainset,
                             batch_size=train_batch_size,
                             num_workers=0,
                             shuffle=False,
                             pin_memory=True)
 
-
-    #model = CNNSingleValueRanker(image_size=image_size)
-    model = resnet18()
+    model = resnet50()
     try:
         model.load_state_dict(torch.load('RankPrediction-model.pkl', map_location='cpu'))
     except:
         print('no previously existing trained model')
     model = model.to(device)
     
-    optimizer = torch.optim.Adam([param for param in model.parameters() if param.requires_grad == True])
+    optimizer = torch.optim.AdamW(
+        [param for param in model.parameters() if param.requires_grad == True],
+                                lr=0.001, 
+                                betas=(0.9, 0.999), 
+                                eps=1e-08, 
+                                weight_decay=0.01, 
+                                amsgrad=False)
 
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                               mode='min',
+                                               factor=0.1,
+                                               patience=1000,
+                                               threshold=0.0001,
+                                               threshold_mode='rel',
+                                               cooldown=0,
+                                               min_lr=1e-7,
+                                               eps=1e-08,
+                                               verbose=True)
     criterion = nn.MSELoss()#KLDivLoss(reduction='batchmean')
     criterion.to(device)
 
@@ -122,7 +137,7 @@ def trainer(window, Listings):
         pd_csv = pd.read_csv('Data/RankedPairs.csv').drop(['SortKey'],axis=1)
         trainset = ImageDataSet(pd_csv,image_size,device)
         trainloader = DataLoader(trainset,
-                                batch_size=200,
+                                batch_size=train_batch_size,
                                 num_workers=0,
                                 shuffle=False,
                                 pin_memory=True)
@@ -139,17 +154,17 @@ def trainer(window, Listings):
     while (train_order_loss != 0) or (1-train_std > 0.1):
         
         trainset,trainloader = shuffle_ranked_pairs(trainset)
-
         train_loss, train_order_loss, train_mean, train_std = train(model, trainloader, optimizer, criterion,loss_type='orderandstdev')
+        scheduler.step(train_loss)
         print(train_loss/(train_std+1.0e-25),train_order_loss,train_mean,train_std)
-
         writer.add_scalar('Loss over STD', train_loss/(train_std+1.0e-25), epoch)
         writer.add_scalar('Order loss', train_order_loss, epoch)
         writer.add_scalar('Mean', train_mean, epoch)
         writer.add_scalar('STD', train_std, epoch)
+        writer.add_scalar('Learning rate',scheduler._last_lr[0],epoch)
         epoch += 1
         
-        if epoch % 50 == 0:
+        if epoch % 500 == 0:
             print('Reranking images')
             rerank_images(window)
             torch.save(model.state_dict(), 'RankPrediction-model.pkl')

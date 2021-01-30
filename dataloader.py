@@ -23,11 +23,11 @@ class ImageDataSet(Dataset):
 
         augmentations = [transforms.RandomHorizontalFlip(p=0.5),
 
-                         transforms.RandomAffine(30,
-                                                 translate=(0.3,0.3),
-                                                 scale=(0.8,1.2)),
+                        transforms.RandomAffine(degrees = 10,
+                                                translate=(0.1,0.1),
+                                                scale=(0.9,1.1)),
 
-                         transforms.ColorJitter(brightness=0.05,
+                        transforms.ColorJitter(brightness=0.05,
                                                 contrast=0.05,
                                                 saturation=0.05,
                                                 hue=0.05)]
@@ -67,6 +67,6 @@ class ImageDataSet(Dataset):
         image = self.resize_transform(image)
         if self.do_augmentation:
             image = self.augmentation_transforms(image)
-        image = self.required_transforms(image).to(self.device)
-        rank = torch.Tensor([self.binary_rank[idx]]).float().to(self.device)
-        return image, self.binary_rank[idx]
+        image = self.required_transforms(image)
+        rank = torch.Tensor([self.binary_rank[idx]]).float()
+        return image, rank
