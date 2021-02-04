@@ -10,17 +10,16 @@ from PyQt5 import QtCore
 from trainer import trainer
 
 os.environ['LRU_CACHE_CAPACITY']='20'
-
+image_window_size = 800
 
 class PairwisePrompt(QDialog):
     def __init__(self, parent=None):
         super(PairwisePrompt, self).__init__(parent)
 
-
         self.left_image = QLabel()
-        self.left_image.setFixedSize(512, 512)
+        self.left_image.setFixedSize(image_window_size,image_window_size)
         self.right_image = QLabel()
-        self.right_image.setFixedSize(512, 512)
+        self.right_image.setFixedSize(image_window_size, image_window_size)
 
         self.image_preference = image_preference
         self.LeftSelectionButton = QPushButton('Select Image 1')
@@ -61,18 +60,18 @@ def read_ranking_file():
 def update_single_image(preference):
     new_display_image,image_index = get_random_image()
     if preference == 1: #if the right job was preferred
-        window.left_image.setPixmap(QPixmap('Data/raw-img/'+new_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
+        window.left_image.setPixmap(QPixmap('Data/raw-img/'+new_display_image['ImageFile']).scaled(image_window_size, image_window_size, QtCore.Qt.KeepAspectRatio))
     if preference == 0: #if the left job was preferred
-        window.right_image.setPixmap(QPixmap('Data/raw-img/'+new_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
+        window.right_image.setPixmap(QPixmap('Data/raw-img/'+new_display_image['ImageFile']).scaled(image_window_size, image_window_size, QtCore.Qt.KeepAspectRatio))
     return (image_index)
 
 def update_both_image(refinement=False):
     def write_both_to_app(left_display_image,right_display_image):
-        window.left_image.setPixmap(QPixmap('Data/raw-img/'+left_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
-        window.right_image.setPixmap(QPixmap('Data/raw-img/'+right_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
+        window.left_image.setPixmap(QPixmap('Data/raw-img/'+left_display_image['ImageFile']).scaled(image_window_size, image_window_size, QtCore.Qt.KeepAspectRatio))
+        window.right_image.setPixmap(QPixmap('Data/raw-img/'+right_display_image['ImageFile']).scaled(image_window_size, image_window_size, QtCore.Qt.KeepAspectRatio))
 
     if refinement:
-        sampletype = random.randint(0,1)
+        sampletype = 0 #random.randint(0,1)
         if sampletype == 0:
             left_display_image,right_display_image,list_indices = get_closest_pair()
         elif sampletype == 1:
@@ -109,7 +108,7 @@ def update_step_state(preference):
         pairwise_ranked_images.append([image_list['ImageFile'][list_indices[1]],1])
     total_selection_count[0] += 1
     window.ProgressBar.setValue(total_selection_count[0])
-    if total_selection_count[0] >= 50:
+    if total_selection_count[0] >= 1:
         window.left_image.setPixmap(QPixmap())
         window.right_image.setPixmap(QPixmap())
         run_ai_training()

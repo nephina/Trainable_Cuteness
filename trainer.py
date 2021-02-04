@@ -28,7 +28,7 @@ def train(model, iterator, optimizer, criterion, loss_type = 'order'):
         loss, order_loss = pairwise_loss(predictions,
                                         ranks,
                                         criterion,
-                                        'orderandstdev')
+                                        loss_type)
 
         loss.backward()
         optimizer.step()
@@ -58,12 +58,12 @@ def test(window, model, iterator):
 def trainer(window, Listings):
     
     #Define the training characteristics
-    train_batch_size = 50
-    full_set_batch_size = 1000
-    image_size = 256
+    train_batch_size = 100
+    full_set_batch_size = 100
+    image_size = 512
 
     window.StatusText.setText('Building Training Dataset')
-    window.ProgressBar.setRange(0, 100)
+    window.ProgressBar.setRange(0, 200)
     window.ProgressBar.setValue(0)
     
     pd_csv = pd.read_csv('Data/RankedPairs.csv').drop(['SortKey'],axis=1)
@@ -74,7 +74,8 @@ def trainer(window, Listings):
                             shuffle=False,
                             pin_memory=True)
 
-    model = resnet18()
+    #model = CNNSingleValueRanker(image_size=image_size)
+    model = resnet18(pretrained=False)
     try:
         model.load_state_dict(torch.load('RankPrediction-model.pkl', map_location='cpu'))
     except:
@@ -99,7 +100,7 @@ def trainer(window, Listings):
                                                min_lr=1e-7,
                                                eps=1e-08,
                                                verbose=True)
-    criterion = nn.MSELoss()#KLDivLoss(reduction='batchmean')
+    criterion = nn.MSELoss()
     criterion.to(device)
 
     writer = SummaryWriter(flush_secs=15) #tensorboardX writer
@@ -151,10 +152,10 @@ def trainer(window, Listings):
     train_order_loss = 10e10
     train_std = 0
 
-    while (train_order_loss != 0) or (1-train_std > 0.1):
+    while 1: #(train_order_loss != 0) or (1-train_std > 0.1):
         
         trainset,trainloader = shuffle_ranked_pairs(trainset)
-        train_loss, train_order_loss, train_mean, train_std = train(model, trainloader, optimizer, criterion,loss_type='orderandstdev')
+        train_loss, train_order_loss, train_mean, train_std = train(model, trainloader, optimizer, criterion,loss_type='orderandcenterednormal')
         #scheduler.step(train_loss)
         print(train_loss/(train_std+1.0e-25),train_order_loss,train_mean,train_std)
         writer.add_scalar('Loss over STD', train_loss/(train_std+1.0e-25), epoch)
@@ -164,7 +165,7 @@ def trainer(window, Listings):
         #writer.add_scalar('Learning rate',scheduler._last_lr[0],epoch)
         epoch += 1
         
-        if epoch % 500 == 0:
+        if epoch % 100 == 0:
             print('Reranking images')
             rerank_images(window)
             torch.save(model.state_dict(), 'RankPrediction-model.pkl')
