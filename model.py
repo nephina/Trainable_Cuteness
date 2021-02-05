@@ -373,7 +373,22 @@ def resnet18(pretrained: bool = True, progress: bool = True, **kwargs: Any) -> R
     """
     model = _resnet('resnet18', BasicBlock, [2, 2, 2, 2], pretrained, progress,
                    **kwargs)
-    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
+
+    class resnet18_variational_outputs(nn.Module):
+        def __init__(self,resnet_base):
+            super(resnet18_variational_outputs, self).__init__()
+            self.resnet_base = resnet_base
+            self.linear = nn.Linear(1000,1)
+        def forward(self, x):
+            x = self.resnet_base(x)
+            mu = self.linear(F.relu(x))
+            log_var = self.linear(F.relu(x))
+            return mu, log_var
+
+    #mu = nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
+    #log_var = nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
+    
+    return resnet18_variational_outputs(model)
 
 def resnet34(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
     r"""ResNet-34 model from

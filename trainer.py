@@ -23,9 +23,9 @@ def train(model, iterator, optimizer, criterion, loss_type = 'order'):
     for batch in iterator:
         images = batch[0].to(device,non_blocking=True)
         ranks = batch[1].to(device,non_blocking=True)
-        predictions = model(images)
-
+        predictions, log_vars = model(images)
         loss, order_loss = pairwise_loss(predictions,
+                                        log_vars,
                                         ranks,
                                         criterion,
                                         loss_type)
@@ -50,17 +50,17 @@ def test(window, model, iterator):
     with torch.no_grad():
         for iteration, batch in enumerate(iterator):
             images = batch[0].to(device)
-            predictions = torch.flatten(model(images))
-            test_result.extend(predictions.to(torch.device('cpu')).tolist())
+            predictions, log_vars = model(images)
+            test_result.extend(torch.flatten(predictions).to(torch.device('cpu')).tolist())
             window.ProgressBar.setValue(iteration+1)
     return test_result
 
 def trainer(window, Listings):
     
     #Define the training characteristics
-    train_batch_size = 100
+    train_batch_size = 500
     full_set_batch_size = 100
-    image_size = 512
+    image_size = 64
 
     window.StatusText.setText('Building Training Dataset')
     window.ProgressBar.setRange(0, 200)
@@ -152,10 +152,10 @@ def trainer(window, Listings):
     train_order_loss = 10e10
     train_std = 0
 
-    while 1: #(train_order_loss != 0) or (1-train_std > 0.1):
+    while (train_order_loss != 0) or (1-train_std > 0.01) or (abs(train_mean) > 0.01):
         
         trainset,trainloader = shuffle_ranked_pairs(trainset)
-        train_loss, train_order_loss, train_mean, train_std = train(model, trainloader, optimizer, criterion,loss_type='orderandcenterednormal')
+        train_loss, train_order_loss, train_mean, train_std = train(model, trainloader, optimizer, criterion,loss_type='orderandvariational')
         #scheduler.step(train_loss)
         print(train_loss/(train_std+1.0e-25),train_order_loss,train_mean,train_std)
         writer.add_scalar('Loss over STD', train_loss/(train_std+1.0e-25), epoch)

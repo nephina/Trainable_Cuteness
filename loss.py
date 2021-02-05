@@ -26,7 +26,7 @@ def pair_order_loss(output,target):
     
     return(loss)
 
-def pairwise_loss(predictions,ranks,criterion,loss_type):
+def pairwise_loss(predictions,log_vars,ranks,criterion,loss_type):
     '''
     Pair loss isn't quite enough usually. There is a way out of that loss 
     function, and that is to rank everything exactly the same. So to mitigate 
@@ -59,7 +59,6 @@ def pairwise_loss(predictions,ranks,criterion,loss_type):
         centered_normal_loss = kldiv(
                                     sorted_softlog_predictions, 
                                     normal_dist_softlog)
-        print(centered_normal_loss)
         if torch.isnan(centered_normal_loss).any():
             loss = order_loss
         else:
@@ -77,6 +76,16 @@ def pairwise_loss(predictions,ranks,criterion,loss_type):
             loss = order_loss
         else:
             loss = order_loss+beta_dist_loss
+
+    elif loss_type == 'orderandvariational':
+        std = log_vars.mul(0.5).exp_()
+        epsilon = torch.randn_like(std)
+        rankings = predictions + (std * epsilon)
+
+        order_loss = pair_order_loss(rankings,ranks)
+        kldivloss = -0.5 * torch.sum(1 + log_vars - predictions**2 - log_vars.exp())
+        loss = order_loss + 1e-5 * kldivloss
+
     return loss, order_loss
 
 

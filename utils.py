@@ -76,7 +76,7 @@ class FullGrad():
 
         self.model.eval()
         image = image.requires_grad_()
-        out = self.model(image)
+        out, *_ = self.model(image)
         if target_class is None:
             target_class = out.data.max(1, keepdim=True)[1]
         
