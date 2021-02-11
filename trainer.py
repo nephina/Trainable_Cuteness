@@ -58,9 +58,9 @@ def test(window, model, iterator):
 def trainer(window, Listings):
     
     #Define the training characteristics
-    train_batch_size = 500
-    full_set_batch_size = 100
-    image_size = 64
+    train_batch_size = 50
+    full_set_batch_size = 50
+    image_size = 256
 
     window.StatusText.setText('Building Training Dataset')
     window.ProgressBar.setRange(0, 200)
@@ -84,22 +84,28 @@ def trainer(window, Listings):
     
     optimizer = torch.optim.AdamW(
         [param for param in model.parameters() if param.requires_grad == True],
-                                lr=0.0001, 
+                                lr=0.001, 
                                 betas=(0.9, 0.999), 
                                 eps=1e-08, 
                                 weight_decay=0.01, 
                                 amsgrad=False)
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                               mode='min',
-                                               factor=0.1,
-                                               patience=500,
-                                               threshold=0.0001,
-                                               threshold_mode='rel',
-                                               cooldown=0,
-                                               min_lr=1e-7,
-                                               eps=1e-08,
-                                               verbose=True)
+    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+    #                                           mode='min',
+    #                                           factor=0.1,
+    #                                           patience=500,
+    #                                           threshold=0.0001,
+    #                                           threshold_mode='rel',
+    #                                           cooldown=0,
+    #                                           min_lr=1e-7,
+    #                                           eps=1e-08,
+    #                                           verbose=True)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer,
+                                            T_0=5,
+                                            T_mult=2,
+                                            eta_min=1e-12,
+                                            last_epoch=-1,
+                                            verbose=False)
     criterion = nn.MSELoss()
     criterion.to(device)
 
@@ -152,17 +158,17 @@ def trainer(window, Listings):
     train_order_loss = 10e10
     train_std = 0
 
-    while (train_order_loss != 0) or (1-train_std > 0.01) or (abs(train_mean) > 0.01):
+    while (train_order_loss != 0):# or (1-train_std > 0.01) or (abs(train_mean) > 0.01):
         
         trainset,trainloader = shuffle_ranked_pairs(trainset)
         train_loss, train_order_loss, train_mean, train_std = train(model, trainloader, optimizer, criterion,loss_type='orderandvariational')
-        #scheduler.step(train_loss)
+        scheduler.step(epoch)
         print(train_loss/(train_std+1.0e-25),train_order_loss,train_mean,train_std)
         writer.add_scalar('Loss over STD', train_loss/(train_std+1.0e-25), epoch)
         writer.add_scalar('Order loss', train_order_loss, epoch)
         writer.add_scalar('Mean', train_mean, epoch)
         writer.add_scalar('STD', train_std, epoch)
-        #writer.add_scalar('Learning rate',scheduler._last_lr[0],epoch)
+        writer.add_scalar('Learning rate',scheduler._last_lr[0],epoch)
         epoch += 1
         
         if epoch % 100 == 0:
@@ -172,8 +178,7 @@ def trainer(window, Listings):
             window.StatusText.setText('Training the Neural Net')
             window.ProgressBar.setRange(0, 100)
             window.ProgressBar.setValue(0)
-        
-        #window.ProgressBar.setValue(epoch)
+
     torch.save(model.state_dict(), 'RankPrediction-model.pkl')
     rerank_images(window)
     writer.close()

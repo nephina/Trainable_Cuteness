@@ -71,9 +71,9 @@ def update_both_image(refinement=False):
         window.right_image.setPixmap(QPixmap('Data/raw-img/'+right_display_image['ImageFile']).scaled(image_window_size, image_window_size, QtCore.Qt.KeepAspectRatio))
 
     if refinement:
-        sampletype = 0 #random.randint(0,1)
+        sampletype = random.randint(0,1)
         if sampletype == 0:
-            left_display_image,right_display_image,list_indices = get_closest_pair()
+            left_display_image,right_display_image,list_indices =  get_closest_pair()
         elif sampletype == 1:
             left_display_image,right_display_image,list_indices = get_topend_close_pair()
         write_both_to_app(left_display_image,right_display_image)
@@ -184,6 +184,14 @@ def get_closest_pair():
     deltas = deltas.reset_index(drop=True)
     small_delta_random_sample_index = random.sample(range(0,int((len(deltas)*0.2))),1)
     list_indices = [int(deltas[1][small_delta_random_sample_index]), int(deltas[1][small_delta_random_sample_index])+1]
+    return image_list.iloc[list_indices[0]],image_list.iloc[list_indices[1]],list_indices
+
+def get_adjacent_random_pair():
+    global image_list
+    image_list.sort_values(by=['Rating'],inplace=True,ascending=False)
+    list_indices = [None,None]
+    list_indices[0] = random.randint(0,len(image_list)-1)
+    list_indices[1] = list_indices[0]+1
     return image_list.iloc[list_indices[0]],image_list.iloc[list_indices[1]],list_indices
 
 def get_topend_close_pair():

@@ -23,9 +23,9 @@ class ImageDataSet(Dataset):
 
         augmentations = [transforms.RandomHorizontalFlip(p=0.5),
 
-                        transforms.RandomAffine(degrees = 10,
-                                                translate=(0.1,0.1),
-                                                scale=(0.9,1.1)),
+                        transforms.RandomAffine(degrees = 45,
+                                                translate=(0.2,0.2),
+                                                scale=(0.7,1.3)),
 
                         transforms.ColorJitter(brightness=0.05,
                                                 contrast=0.05,
@@ -34,7 +34,7 @@ class ImageDataSet(Dataset):
 
         self.augmentation_transforms = transforms.Compose(augmentations)
 
-        required = [transforms.ToTensor(), transforms.Normalize(0,1)]
+        required = [transforms.ToTensor(), transforms.Normalize((0.485,0.456,0.406),(0.229,0.224,0.225))] #VGG mean/std values
         self.required_transforms = transforms.Compose(required)
 
     def __len__(self):

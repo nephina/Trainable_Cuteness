@@ -22,7 +22,7 @@ def pair_order_loss(output,target):
 
     # This function punishes any incorrectly ranked items, while allowing 
     # correctly-ranked items to move around at will in the ranking system.
-    loss = torch.mean(torch.relu(x))
+    loss = torch.mean(torch.relu(x).pow(2))
     
     return(loss)
 
@@ -84,7 +84,7 @@ def pairwise_loss(predictions,log_vars,ranks,criterion,loss_type):
 
         order_loss = pair_order_loss(rankings,ranks)
         kldivloss = -0.5 * torch.sum(1 + log_vars - predictions**2 - log_vars.exp())
-        loss = order_loss + 1e-5 * kldivloss
+        loss = order_loss + (1*kldivloss)
 
     return loss, order_loss
 

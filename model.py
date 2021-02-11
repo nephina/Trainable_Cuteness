@@ -378,11 +378,12 @@ def resnet18(pretrained: bool = True, progress: bool = True, **kwargs: Any) -> R
         def __init__(self,resnet_base):
             super(resnet18_variational_outputs, self).__init__()
             self.resnet_base = resnet_base
-            self.linear = nn.Linear(1000,1)
+            self.linear_mu = nn.Linear(1000,1)
+            self.linear_log_var = nn.Linear(1000,1)
         def forward(self, x):
             x = self.resnet_base(x)
-            mu = self.linear(F.relu(x))
-            log_var = self.linear(F.relu(x))
+            mu = self.linear_mu(F.relu(x))
+            log_var = self.linear_log_var(F.relu(x))
             return mu, log_var
 
     #mu = nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))

@@ -35,11 +35,11 @@ def get_saliency_map(image, saliency_map):
     
     saliency_map = saliency_map - saliency_map.min()
     saliency_map = saliency_map / saliency_map.max()
-    saliency_map = saliency_map.clip(0,1)
-
     saliency_map = np.uint8(saliency_map * 255).transpose(1, 2, 0)
     saliency_map = cv2.resize(saliency_map, (512,512))
 
+    image = image - image.min()
+    image = image / image.max()
     image = np.uint8(image * 255).transpose(1,2,0)
     image = cv2.resize(image, (512, 512))
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -76,7 +76,7 @@ class FullGrad():
 
         self.model.eval()
         image = image.requires_grad_()
-        out, *_ = self.model(image)
+        out = self.model(image)
         if target_class is None:
             target_class = out.data.max(1, keepdim=True)[1]
         
