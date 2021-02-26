@@ -6,5 +6,5 @@ __pycache__/
 runs/
 .ipynb_checkpoints
 .vscode
-RankedPairs.csv
+*.csv
 .~lock*
