@@ -11,6 +11,7 @@ import csv
 from sampling_utils import *
 
 os.environ['LRU_CACHE_CAPACITY']='20'
+image_window_size = 800
 
 #path = "F:/Cuteness AI/Code/Trainable_Cuteness-main/" # this is the file directory for the Bat file
 #os.chdir(path) # changing to the file directory we want
@@ -21,9 +22,9 @@ class PairwisePrompt(QDialog):
 
 
         self.left_image = QLabel()
-        self.left_image.setFixedSize(512, 512)
+        self.left_image.setFixedSize(image_window_size, image_window_size)
         self.right_image = QLabel()
-        self.right_image.setFixedSize(512, 512)
+        self.right_image.setFixedSize(image_window_size, image_window_size)
 
         self.image_preference = image_preference
         self.LeftSelectionButton = QPushButton('Select Image 1')
@@ -64,15 +65,15 @@ def read_ranking_file():
 def update_single_image(preference):
     new_display_image,image_index = get_random_image(image_list)
     if preference == 1: #if the right job was preferred
-        window.left_image.setPixmap(QPixmap('Data/raw-img/'+new_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
+        window.left_image.setPixmap(QPixmap('Data/raw-img/'+new_display_image['ImageFile']).scaled(image_window_size, image_window_size, QtCore.Qt.KeepAspectRatio))
     if preference == 0: #if the left job was preferred
-        window.right_image.setPixmap(QPixmap('Data/raw-img/'+new_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
+        window.right_image.setPixmap(QPixmap('Data/raw-img/'+new_display_image['ImageFile']).scaled(image_window_size, image_window_size, QtCore.Qt.KeepAspectRatio))
     return (image_index)
 
 def update_both_image(refinement=False):
     def write_both_to_app(left_display_image,right_display_image):
-        window.left_image.setPixmap(QPixmap('Data/raw-img/'+left_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
-        window.right_image.setPixmap(QPixmap('Data/raw-img/'+right_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
+        window.left_image.setPixmap(QPixmap('Data/raw-img/'+left_display_image['ImageFile']).scaled(image_window_size, image_window_size, QtCore.Qt.KeepAspectRatio))
+        window.right_image.setPixmap(QPixmap('Data/raw-img/'+right_display_image['ImageFile']).scaled(image_window_size, image_window_size, QtCore.Qt.KeepAspectRatio))
 
     if refinement:
         sampletype = 0 #random.randint(0,1)
