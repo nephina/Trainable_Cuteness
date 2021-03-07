@@ -8,11 +8,12 @@ from PyQt5.QtGui import QPixmap
 from PyQt5 import QtCore
 from trainer import trainer
 import csv
+from sampling_utils import *
 
 os.environ['LRU_CACHE_CAPACITY']='20'
 
-path = "F:/Cuteness AI/Code/Trainable_Cuteness-main/" # this is the file directory for the Bat file
-os.chdir(path) # changing to the file directory we want
+#path = "F:/Cuteness AI/Code/Trainable_Cuteness-main/" # this is the file directory for the Bat file
+#os.chdir(path) # changing to the file directory we want
 
 class PairwisePrompt(QDialog):
     def __init__(self, parent=None):
@@ -61,7 +62,7 @@ def read_ranking_file():
     return image_list, n_total_images
 
 def update_single_image(preference):
-    new_display_image,image_index = get_random_image()
+    new_display_image,image_index = get_random_image(image_list)
     if preference == 1: #if the right job was preferred
         window.left_image.setPixmap(QPixmap('Data/raw-img/'+new_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
     if preference == 0: #if the left job was preferred
@@ -74,14 +75,14 @@ def update_both_image(refinement=False):
         window.right_image.setPixmap(QPixmap('Data/raw-img/'+right_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
 
     if refinement:
-        sampletype = random.randint(0,1)
+        sampletype = 0 #random.randint(0,1)
         if sampletype == 0:
-            left_display_image,right_display_image,list_indices = get_closest_pair()
+            left_display_image,right_display_image,list_indices = get_closest_pair(image_list)
         elif sampletype == 1:
-            left_display_image,right_display_image,list_indices = get_topend_close_pair()
+            left_display_image,right_display_image,list_indices = get_topend_close_pair(image_list)
         write_both_to_app(left_display_image,right_display_image)
     else:
-        left_display_image,right_display_image,list_indices = get_random_image_pair()
+        left_display_image,right_display_image,list_indices = get_random_image_pair(image_list)
         write_both_to_app(left_display_image,right_display_image)
 
     return list_indices
@@ -161,40 +162,6 @@ def no_pref():
         list_indices = update_both_image(refinement=False)
     else:
         list_indices = update_both_image(refinement=False)
-
-def get_random_image():
-    image_index = random.sample(range(0,len(image_list)-1),2)
-    image = image_list.iloc[image_index[0]]
-    return image,image_index[0]
-
-def get_random_image_pair():
-    listing_pair_indices = random.sample(range(0,len(image_list)-1),2)
-    Listing1 = image_list.iloc[listing_pair_indices[0]]
-    Listing2 = image_list.iloc[listing_pair_indices[1]]
-    return Listing1,Listing2,listing_pair_indices
-
-def get_closest_pair():
-    global image_list
-    image_list.sort_values(by=['Rating'],inplace=True,ascending=False)
-    #Toplistings = image_list[0:int(n_total_images*0.2)]
-    deltas = abs(diff(image_list['Rating']))
-    deltas = [deltas.tolist()]
-    deltas.append([index for index in range(len(deltas[0]))])
-    deltas = pd.DataFrame(deltas)
-    deltas.sort_values(by=[0],inplace=True,axis=1)
-    deltas = deltas.transpose()
-    deltas = deltas.reset_index(drop=True)
-    small_delta_random_sample_index = random.sample(range(0,int((len(deltas)*0.2))),1)
-    list_indices = [int(deltas[1][small_delta_random_sample_index]), int(deltas[1][small_delta_random_sample_index])+1]
-    return image_list.iloc[list_indices[0]],image_list.iloc[list_indices[1]],list_indices
-
-def get_topend_close_pair():
-    global image_list
-    image_list.sort_values(by=['Rating'],inplace=True,ascending=False)
-    list_indices = [None,None]
-    list_indices[0] = random.randint(0,200)
-    list_indices[1] = list_indices[0]+1
-    return image_list.iloc[list_indices[0]],image_list.iloc[list_indices[1]],list_indices
 
 def remove_conflicts(pairwise_ranked_images):
     from itertools import combinations

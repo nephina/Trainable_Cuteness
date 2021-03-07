@@ -1,4 +1,4 @@
-]import torch
+import torch
 from torch.utils.data import Dataset
 # torch.multiprocessing.set_start_method('spawn') # RuntimeError: context has already been set
 from PIL import Image
@@ -6,8 +6,8 @@ from torchvision import transforms
 from numpy import shape
 
 import os
-path = "F:/Cuteness AI/Code/Trainable_Cuteness-main/" # this is the file directory for the Bat file
-os.chdir(path) # changing to the file directory we want
+#path = "F:/Cuteness AI/Code/Trainable_Cuteness-main/" # this is the file directory for the Bat file
+#os.chdir(path) # changing to the file directory we want
 
 class ImageDataSet(Dataset):
     '''Dataset for loading images and associated rank labels'''
@@ -38,7 +38,7 @@ class ImageDataSet(Dataset):
         self.augmentation_transforms = transforms.Compose(augmentations)
         normal_params = (0.485,0.456,0.406),(0.229,0.224,0.225) #VGG mean/std
         required = [transforms.ToTensor(),
-                    transforms.Normalize(normalization_values)] 
+                    transforms.Normalize(normal_params[0],normal_params[1])] 
         self.required_transforms = transforms.Compose(required)
 
     def __len__(self):

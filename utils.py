@@ -9,7 +9,7 @@ import torchvision.transforms as transforms
 
 
 class NormalizeInverse(transforms.Normalize):
-    # Undo normalization on images
+    '''Undo normalization on images'''
 
     def __init__(self, mean, std):
         mean = torch.as_tensor(mean)
@@ -33,8 +33,8 @@ def get_saliency_map(image, saliency_map):
     image = image.data.cpu().numpy()
     saliency_map = saliency_map.data.cpu().numpy()
     
-    saliency_map = saliency_map - saliency_map.min()
-    saliency_map = saliency_map / saliency_map.max()
+    #saliency_map = saliency_map - saliency_map.min()
+    #saliency_map = saliency_map / saliency_map.max()
     saliency_map = np.uint8(saliency_map * 255).transpose(1, 2, 0)
     saliency_map = cv2.resize(saliency_map, (512,512))
 
@@ -58,9 +58,7 @@ def get_saliency_map(image, saliency_map):
     return img_with_heatmap
 
 class FullGrad():
-    """
-    Compute FullGrad saliency map and full gradient decomposition
-    """
+    """Compute FullGrad saliency map and full gradient decomposition"""
 
     def __init__(self, model, im_size = (3,64,64) ):
         self.model = model
@@ -70,9 +68,7 @@ class FullGrad():
 
 
     def fullGradientDecompose(self, image, target_class=None):
-        """
-        Compute full-gradient decomposition for an image
-        """
+        """Compute full-gradient decomposition for an image"""
 
         self.model.eval()
         image = image.requires_grad_()
@@ -144,7 +140,7 @@ class FullGrad():
         return cam
 
 class FullGradExtractor:
-    #Extract tensors needed for FullGrad using hooks
+    '''Extract tensors needed for FullGrad using hooks'''
     
     def __init__(self, model, im_size = (3,224,224)):
         self.model = model
@@ -209,9 +205,11 @@ class FullGradExtractor:
         return input_gradients, self.feature_grads
 
 def compute_saliency(dataloader,model,image_size):
+    '''Return the saliency maps for images passed through the model'''
+
     maps = []
     device = torch.device('cpu')
-    unnormalize = NormalizeInverse(mean = [0, 0, 0],std = [1,1,1])
+    unnormalize = NormalizeInverse((0.485,0.456,0.406),(0.229,0.224,0.225))
     for batch_idx, (data, _) in enumerate(dataloader):
         
         data = data.to(device).requires_grad_()

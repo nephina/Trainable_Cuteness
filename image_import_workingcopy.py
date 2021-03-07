@@ -21,11 +21,13 @@ import os
 import uuid
 import csv
 import shutil
+import urllib.request
 
-data_path = "F:/Cuteness AI/Data Set/" # this is the file directory for the Bat file
-path = "F:/Cuteness AI/Code/Trainable_Cuteness-main/" # this is the file directory for the Bat file
-os.chdir(data_path) # changing to the file directory we want
+#path = "/home/alexa/Desktop/Trainable_Cuteness" 
+path = os.getcwd()
 
+data_path = os.path.join(path,'Data')
+temp_data_path = os.path.join(data_path,'Temp')
 # %%
 """
 For data download, add an option to delete downloaded folder
@@ -62,13 +64,9 @@ if input("Download files (Yes or No)? ").lower() == "yes":
     down_files = True
     import kaggle
     kaggle.api.authenticate()
-    kaggle.api.dataset_download_files('alessiocorrado99/animals10', path=data_path, unzip=True)
+    kaggle.api.dataset_download_files('alessiocorrado99/animals10', path=temp_data_path, unzip=True, quiet=False)
 else:
     down_files = False
-
-
-
-      
         
 # Ask if user wants to delete downloaded files when done
 if input("Delete Downloaded files (Yes or No)? ").lower() == "yes":
@@ -77,7 +75,7 @@ else:
     delete_files = False
 # %%
 # search for all file types in the folder and then exclude py and ipynb files
-ListFiles = os.walk("F:/Cuteness AI/Data Set/")
+ListFiles = os.walk(temp_data_path)
 FileTypes = []
 for walk_output in os.walk(data_path):
     for file_name in walk_output[-1]:
@@ -89,7 +87,10 @@ ext = ['.' + i for i in ext if not any(j in i for j in exclude_ext)] # removes e
 
 # copy files to new path
 ImageFiles = []
-for root, dirs, files in os.walk(data_path):
+if not os.path.exists(os.path.join(data_path,'raw-img')):
+    os.makedirs(os.path.join(data_path,'raw-img'))
+newdir = os.path.join(data_path,'raw-img')
+for root, dirs, files in os.walk(temp_data_path):
     for filename in files:
         if filename.endswith(tuple(ext)):
             ImageFiles.append(filename)
@@ -98,13 +99,9 @@ for root, dirs, files in os.walk(data_path):
         
             # Separate base from extension
             base, extension = os.path.splitext(filename)
-                  
-            if not os.path.exists(path+'Data/'+'raw-img'):
-                newdir = path+'Data/'+'raw-img'
-                os.makedirs(newdir)
             new_name = os.path.join(newdir, filename)
-        
-            if not os.path.exists(new_name):  # file does not
+
+            if not os.path.exists(new_name):  # file does not exist
                 shutil.copy(old_name, new_name)
             else:  # file exists
                 while True:
@@ -114,7 +111,7 @@ for root, dirs, files in os.walk(data_path):
                     break   
 
 
-os.chdir(path) # changing to the file directory we want
+#os.chdir(path) # changing to the file directory we want
 
 # create ImageList.csv with image list in new directory
 if os.path.exists('Data/ImageList.csv'):
@@ -128,7 +125,6 @@ with open('Data/ImageList.csv', 'wt') as file:
         write.writerow([row, 1])
     file.close()
 
-
-
+os.rmdir(temp_data_path)
 # Have it bring up file explorer? For now have it prompt for directory path
 # have the code prompt the user for both data paths, the one to copy from and the one to copy to

@@ -12,8 +12,8 @@ import logging
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-def train(model, iterator, optimizer, criterion, loss_type = 'order'):
-'''Run the training loop on a training dataset'''
+def train(model, iterator, optimizer, loss_type = 'order'):
+    '''Run the training loop on a training dataset'''
 
     epoch_loss = 0
     epoch_order_loss = 0
@@ -28,7 +28,6 @@ def train(model, iterator, optimizer, criterion, loss_type = 'order'):
         loss, order_loss = pairwise_loss(predictions,
                                         log_vars,
                                         ranks,
-                                        criterion,
                                         loss_type)
 
         loss.backward()
@@ -171,7 +170,7 @@ def trainer(window, Listings):
     while (train_order_loss != 0):# or (1-train_std > 0.01) or (abs(train_mean) > 0.01):
         
         trainset,trainloader = shuffle_ranked_pairs(trainset)
-        train_loss, train_order_loss, train_mean, train_std = train(model, trainloader, optimizer, criterion,loss_type='orderandvariational')
+        train_loss, train_order_loss, train_mean, train_std = train(model, trainloader, optimizer, loss_type='orderandvariational')
         scheduler.step(epoch)
         print(train_loss/(train_std+1.0e-25),train_order_loss,train_mean,train_std)
         writer.add_scalar('Loss over STD', train_loss/(train_std+1.0e-25), epoch)

@@ -27,7 +27,7 @@ def pair_order_loss(output,target):
     
     return(loss)
 
-def pairwise_loss(predictions,log_vars,ranks,criterion,loss_type):
+def pairwise_loss(predictions,log_vars,ranks,loss_type):
     '''Returns the loss calculated from both pairwise and variational methods
 
     Pair loss isn't quite enough usually. There is a way out of that loss 
@@ -72,6 +72,8 @@ def pairwise_loss(predictions,log_vars,ranks,criterion,loss_type):
             torch.tensor([4],dtype=torch.float32))
         distribution.sample(predictions.size()).squeeze(1)
         distribution = 1-distribution
+        criterion = torch.nn.MSELoss()
+        criterion.to(torch.device('cuda'))
         beta_dist_loss = criterion(torch.sort(predictions).values,
             torch.sort(distribution).values)
         if torch.isnan(beta_dist_loss).any():
