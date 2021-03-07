@@ -1,9 +1,13 @@
-import torch
+]import torch
 from torch.utils.data import Dataset
-torch.multiprocessing.set_start_method('spawn')
+# torch.multiprocessing.set_start_method('spawn') # RuntimeError: context has already been set
 from PIL import Image
 from torchvision import transforms
 from numpy import shape
+
+import os
+path = "F:/Cuteness AI/Code/Trainable_Cuteness-main/" # this is the file directory for the Bat file
+os.chdir(path) # changing to the file directory we want
 
 class ImageDataSet(Dataset):
     '''Dataset for loading images and associated rank labels'''

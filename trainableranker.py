@@ -1,5 +1,5 @@
 import pandas as pd
-from itertools import combinations
+from numpy import diff
 import random
 import sys
 import os
@@ -7,19 +7,22 @@ from PyQt5.QtWidgets import (QApplication, QDialog, QGridLayout, QPushButton, QH
 from PyQt5.QtGui import QPixmap
 from PyQt5 import QtCore
 from trainer import trainer
-from sampling_utils import *
+import csv
 
 os.environ['LRU_CACHE_CAPACITY']='20'
-image_window_size = 800
+
+path = "F:/Cuteness AI/Code/Trainable_Cuteness-main/" # this is the file directory for the Bat file
+os.chdir(path) # changing to the file directory we want
 
 class PairwisePrompt(QDialog):
     def __init__(self, parent=None):
         super(PairwisePrompt, self).__init__(parent)
 
+
         self.left_image = QLabel()
-        self.left_image.setFixedSize(image_window_size,image_window_size)
+        self.left_image.setFixedSize(512, 512)
         self.right_image = QLabel()
-        self.right_image.setFixedSize(image_window_size, image_window_size)
+        self.right_image.setFixedSize(512, 512)
 
         self.image_preference = image_preference
         self.LeftSelectionButton = QPushButton('Select Image 1')
@@ -58,35 +61,34 @@ def read_ranking_file():
     return image_list, n_total_images
 
 def update_single_image(preference):
-    new_display_image,image_index = get_random_image(image_list)
+    new_display_image,image_index = get_random_image()
     if preference == 1: #if the right job was preferred
-        window.left_image.setPixmap(QPixmap('Data/raw-img/'+new_display_image['ImageFile']).scaled(image_window_size, image_window_size, QtCore.Qt.KeepAspectRatio))
+        window.left_image.setPixmap(QPixmap('Data/raw-img/'+new_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
     if preference == 0: #if the left job was preferred
-        window.right_image.setPixmap(QPixmap('Data/raw-img/'+new_display_image['ImageFile']).scaled(image_window_size, image_window_size, QtCore.Qt.KeepAspectRatio))
+        window.right_image.setPixmap(QPixmap('Data/raw-img/'+new_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
     return (image_index)
 
 def update_both_image(refinement=False):
     def write_both_to_app(left_display_image,right_display_image):
-        window.left_image.setPixmap(QPixmap('Data/raw-img/'+left_display_image['ImageFile']).scaled(image_window_size, image_window_size, QtCore.Qt.KeepAspectRatio))
-        window.right_image.setPixmap(QPixmap('Data/raw-img/'+right_display_image['ImageFile']).scaled(image_window_size, image_window_size, QtCore.Qt.KeepAspectRatio))
+        window.left_image.setPixmap(QPixmap('Data/raw-img/'+left_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
+        window.right_image.setPixmap(QPixmap('Data/raw-img/'+right_display_image['ImageFile']).scaled(512, 512, QtCore.Qt.KeepAspectRatio))
 
     if refinement:
         sampletype = random.randint(0,1)
         if sampletype == 0:
-            left_display_image,right_display_image,list_indices =  get_closest_pair(image_list)
+            left_display_image,right_display_image,list_indices = get_closest_pair()
         elif sampletype == 1:
-            left_display_image,right_display_image,list_indices = get_topend_close_pair(image_list)
+            left_display_image,right_display_image,list_indices = get_topend_close_pair()
         write_both_to_app(left_display_image,right_display_image)
     else:
-        left_display_image,right_display_image,list_indices = get_random_image_pair(image_list)
+        left_display_image,right_display_image,list_indices = get_random_image_pair()
         write_both_to_app(left_display_image,right_display_image)
 
     return list_indices
 
 def run_ai_training():
     global image_list, n_total_images, pairwise_ranked_images
-    if len(pairwise_ranked_images) > 2:
-        pairwise_ranked_images = remove_conflicts(pairwise_ranked_images)
+    pairwise_ranked_images = remove_conflicts(pairwise_ranked_images)
     final_ranked_pairs = pd.DataFrame(pairwise_ranked_images)
     final_ranked_pairs.columns = ['ImageFile','Rating']
     final_ranked_pairs['SortKey'] = range(len(final_ranked_pairs))
@@ -108,7 +110,7 @@ def update_step_state(preference):
         pairwise_ranked_images.append([image_list['ImageFile'][list_indices[1]],1])
     total_selection_count[0] += 1
     window.ProgressBar.setValue(total_selection_count[0])
-    if total_selection_count[0] >= 2:
+    if total_selection_count[0] >= 5:
         window.left_image.setPixmap(QPixmap())
         window.right_image.setPixmap(QPixmap())
         run_ai_training()
@@ -160,45 +162,61 @@ def no_pref():
     else:
         list_indices = update_both_image(refinement=False)
 
+def get_random_image():
+    image_index = random.sample(range(0,len(image_list)-1),2)
+    image = image_list.iloc[image_index[0]]
+    return image,image_index[0]
+
+def get_random_image_pair():
+    listing_pair_indices = random.sample(range(0,len(image_list)-1),2)
+    Listing1 = image_list.iloc[listing_pair_indices[0]]
+    Listing2 = image_list.iloc[listing_pair_indices[1]]
+    return Listing1,Listing2,listing_pair_indices
+
+def get_closest_pair():
+    global image_list
+    image_list.sort_values(by=['Rating'],inplace=True,ascending=False)
+    #Toplistings = image_list[0:int(n_total_images*0.2)]
+    deltas = abs(diff(image_list['Rating']))
+    deltas = [deltas.tolist()]
+    deltas.append([index for index in range(len(deltas[0]))])
+    deltas = pd.DataFrame(deltas)
+    deltas.sort_values(by=[0],inplace=True,axis=1)
+    deltas = deltas.transpose()
+    deltas = deltas.reset_index(drop=True)
+    small_delta_random_sample_index = random.sample(range(0,int((len(deltas)*0.2))),1)
+    list_indices = [int(deltas[1][small_delta_random_sample_index]), int(deltas[1][small_delta_random_sample_index])+1]
+    return image_list.iloc[list_indices[0]],image_list.iloc[list_indices[1]],list_indices
+
+def get_topend_close_pair():
+    global image_list
+    image_list.sort_values(by=['Rating'],inplace=True,ascending=False)
+    list_indices = [None,None]
+    list_indices[0] = random.randint(0,200)
+    list_indices[1] = list_indices[0]+1
+    return image_list.iloc[list_indices[0]],image_list.iloc[list_indices[1]],list_indices
+
 def remove_conflicts(pairwise_ranked_images):
+    from itertools import combinations
+    combs = combinations(list(range(int(len(pairwise_ranked_images)/2))),2)
+    combs = list(combs)
+    remove_pairs = []
+    for comb in combs:
+        pair_one = pairwise_ranked_images[int(comb[0]*2):int(comb[0]*2)+2]
+        pair_two = pairwise_ranked_images[int(comb[1]*2):int(comb[1]*2)+2]
+        if pair_one[0][0]==pair_two[0][0] and pair_one[1][0]==pair_two[1][0]:
+            if pair_one[0][1] != pair_two[0][1]:
+                print('You had a conflict between pairs: '+str(comb[0])+' and '+str(comb[1]))
+                remove_pairs.append([comb[0],comb[1]])
 
-    def get_combs(pairwise_ranked_images):
-        combs = combinations(list(range(int(len(pairwise_ranked_images)/2))),2)
-        combs = list(combs)
-        return combs
+        elif pair_one[0][0]==pair_two[1][0] and pair_one[1][0]==pair_two[0][0]:
+            if pair_one[0][1] != pair_two[1][1]:
+                print('You had a conflict between pairs: '+str(comb[0])+' and '+str(comb[1]))
+                remove_pairs.append([comb[0],comb[1]])
 
-    combs = get_combs(pairwise_ranked_images)
-    remove_pairs = True
-    while remove_pairs:
-        for comb in combs:
-            remove_pairs = False
-            pair_one = pairwise_ranked_images[int(comb[0]*2):int(comb[0]*2)+2]
-            pair_two = pairwise_ranked_images[int(comb[1]*2):int(comb[1]*2)+2]
-            if pair_one[0][0] == pair_two[0][0] and pair_one[1][0] == pair_two[1][0]:
-                if pair_one[0][1] == pair_two[0][1]:
-                    print('You had a duplicate pair: lines '+str((comb[0]+1)*2)+' and '+str((comb[1]+1)*2))
-                    remove_pairs = [comb[0],comb[1]]
-                    break
-                elif pair_one[0][1] != pair_two[0][1]:
-                    print('You had a conflict between pairs: lines '+str((comb[0]+1)*2)+' and '+str((comb[1]+1)*2))
-                    remove_pairs = [comb[0],comb[1]]
-                    break
-
-            elif pair_one[0][0] == pair_two[1][0] and pair_one[1][0] == pair_two[0][0]:
-                if pair_one[0][1] == pair_two[1][1]:
-                    print('You had a duplicate pair: lines '+str((comb[0]+1)*2)+' and '+str((comb[1]+1)*2))
-                    remove_pairs = [comb[0],comb[1]]
-                    break
-                elif pair_one[0][1] != pair_two[1][1]:
-                    print('You had a conflict between pairs: lines '+str((comb[0]+1)*2)+' and '+str((comb[1]+1)*2))
-                    remove_pairs = [comb[0],comb[1]]
-                    break
-
-        if remove_pairs:
-            pairwise_ranked_images.pop(int(remove_pairs[0]*2))
-            pairwise_ranked_images.pop(int((remove_pairs[0]*2)))
-            combs = get_combs(pairwise_ranked_images)
-
+    for resolved_num,pair in enumerate(remove_pairs):
+        pairwise_ranked_images.pop(int(pair[0]*2)-2*resolved_num)
+        pairwise_ranked_images.pop(int(pair[0]*2)-2*resolved_num)
     return pairwise_ranked_images
 
 
@@ -218,8 +236,13 @@ image_list, n_total_images = read_ranking_file()
 if os.path.exists('Data/RankedPairs.csv'):
     first_prompt_run = [0]
     pairwise_ranked_images = pd.read_csv('Data/RankedPairs.csv').drop(['SortKey'],axis=1).values.tolist()
-    if len(pairwise_ranked_images) > 2:
-        pairwise_ranked_images = remove_conflicts(pairwise_ranked_images)
+    pairwise_ranked_images = remove_conflicts(pairwise_ranked_images)
+else:
+    headers = ['ImageFile', 'Rating', 'SortKey']
+    with open('Data/RankedPairs.csv', 'wt') as file:
+        write = csv.writer(file, delimiter=',')
+        write.writerow(i for i in headers)
+    file.close()
 list_indices = update_both_image(refinement=False)
 
 sys.exit(app.exec_())
