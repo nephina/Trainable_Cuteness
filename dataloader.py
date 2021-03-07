@@ -1,9 +1,13 @@
 import torch
 from torch.utils.data import Dataset
-torch.multiprocessing.set_start_method('spawn')
+# torch.multiprocessing.set_start_method('spawn') # RuntimeError: context has already been set
 from PIL import Image
 from torchvision import transforms
 from numpy import shape
+
+import os
+path = "F:/Cuteness AI/Code/Trainable_Cuteness-main/" # this is the file directory for the Bat file
+os.chdir(path) # changing to the file directory we want
 
 class ImageDataSet(Dataset):
     # dataset for loading MRI input/mask pairs
@@ -23,18 +27,18 @@ class ImageDataSet(Dataset):
 
         augmentations = [transforms.RandomHorizontalFlip(p=0.5),
 
-                        transforms.RandomAffine(degrees = 45,
-                                                translate=(0.2,0.2),
-                                                scale=(0.7,1.3)),
+                         transforms.RandomAffine(10,
+                                                 translate=(0.1,0.1),
+                                                 scale=(0.9,1.1)),
 
-                        transforms.ColorJitter(brightness=0.05,
+                         transforms.ColorJitter(brightness=0.05,
                                                 contrast=0.05,
                                                 saturation=0.05,
                                                 hue=0.05)]
 
         self.augmentation_transforms = transforms.Compose(augmentations)
 
-        required = [transforms.ToTensor(), transforms.Normalize((0.485,0.456,0.406),(0.229,0.224,0.225))] #VGG mean/std values
+        required = [transforms.ToTensor(), transforms.Normalize(0,1)]
         self.required_transforms = transforms.Compose(required)
 
     def __len__(self):
@@ -67,6 +71,6 @@ class ImageDataSet(Dataset):
         image = self.resize_transform(image)
         if self.do_augmentation:
             image = self.augmentation_transforms(image)
-        image = self.required_transforms(image)
-        rank = torch.Tensor([self.binary_rank[idx]]).float()
-        return image, rank
+        image = self.required_transforms(image).to(self.device)
+        rank = torch.Tensor([self.binary_rank[idx]]).float().to(self.device)
+        return image, self.binary_rank[idx]
