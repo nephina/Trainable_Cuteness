@@ -6,12 +6,13 @@ from torchvision import transforms
 from numpy import shape
 
 class ImageDataSet(Dataset):
-    # dataset for loading MRI input/mask pairs
+    '''Dataset for loading images and associated rank labels'''
     def __init__(self, 
                  image_file_list,
                  image_size, 
                  device=torch.device('cpu'),
                  do_augmentation=True):
+        '''Instantiation of input data and augmentation transforms'''
 
         self.device = device
         self.image_files = image_file_list['ImageFile']
@@ -22,25 +23,31 @@ class ImageDataSet(Dataset):
                                                    self.image_size))
 
         augmentations = [transforms.RandomHorizontalFlip(p=0.5),
-
                         transforms.RandomAffine(degrees = 45,
                                                 translate=(0.2,0.2),
                                                 scale=(0.7,1.3)),
-
                         transforms.ColorJitter(brightness=0.05,
                                                 contrast=0.05,
                                                 saturation=0.05,
                                                 hue=0.05)]
 
         self.augmentation_transforms = transforms.Compose(augmentations)
-
-        required = [transforms.ToTensor(), transforms.Normalize((0.485,0.456,0.406),(0.229,0.224,0.225))] #VGG mean/std values
+        normal_params = (0.485,0.456,0.406),(0.229,0.224,0.225) #VGG mean/std
+        required = [transforms.ToTensor(),
+                    transforms.Normalize(normalization_values)] 
         self.required_transforms = transforms.Compose(required)
 
     def __len__(self):
         return len(self.image_files)
 
     def __getitem__(self, idx):
+        '''Return an image and rank value from the dataset
+
+        Loads the image using PIL.Image and then makes sure that it is an RGB
+        image. If it is RGBA it will convert it back to RGB. It then applies any
+        transforms and augmentations required, converts the image and rank to
+        tensor, and returns them both.
+        '''
 
         def pure_pil_alpha_to_color_v2(image, color=(255, 255, 255)):
             """Alpha composite an RGBA Image with a specified color.

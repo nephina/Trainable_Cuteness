@@ -6,8 +6,4 @@ pillow
 opencv-python
 pandas
 numpy
-random
-re
-sys
-os
 PyQt5

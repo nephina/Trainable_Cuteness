@@ -13,6 +13,7 @@ import logging
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 def train(model, iterator, optimizer, criterion, loss_type = 'order'):
+'''Run the training loop on a training dataset'''
 
     epoch_loss = 0
     epoch_order_loss = 0
@@ -45,6 +46,8 @@ def train(model, iterator, optimizer, criterion, loss_type = 'order'):
     return epoch_loss, epoch_order_loss, epoch_mean, epoch_std
 
 def test(window, model, iterator):
+    '''Run the test loop on a test dataset in eval mode'''
+
     test_result = []
     model.eval()
     with torch.no_grad():
@@ -56,7 +59,16 @@ def test(window, model, iterator):
     return test_result
 
 def trainer(window, Listings):
+    '''Sets up the train/full datasets and runs train/prediction loops
     
+    First it sets up some basic things like batch sizes, datasets, optimizer,
+    learning rate scheduler, and tensorboard. Then it enters a while loop
+    where it will keep running through epochs until it reaches a state where all
+    the iterations in the epoch came back with all images ranked correctly.
+    At repeated intervals in this loop it will also re-rank the full dataset
+    and write the results to the ImageList.csv file.
+    '''
+
     #Define the training characteristics
     train_batch_size = 50
     full_set_batch_size = 50
@@ -74,10 +86,10 @@ def trainer(window, Listings):
                             shuffle=False,
                             pin_memory=True)
 
-    #model = CNNSingleValueRanker(image_size=image_size)
     model = resnet18(pretrained=False)
     try:
-        model.load_state_dict(torch.load('RankPrediction-model.pkl', map_location='cpu'))
+        model.load_state_dict(torch.load('RankPrediction-model.pkl',
+                                         map_location='cpu'))
     except:
         print('no previously existing trained model')
     model = model.to(device)
@@ -90,30 +102,22 @@ def trainer(window, Listings):
                                 weight_decay=0.01, 
                                 amsgrad=False)
 
-    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-    #                                           mode='min',
-    #                                           factor=0.1,
-    #                                           patience=500,
-    #                                           threshold=0.0001,
-    #                                           threshold_mode='rel',
-    #                                           cooldown=0,
-    #                                           min_lr=1e-7,
-    #                                           eps=1e-08,
-    #                                           verbose=True)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer,
                                             T_0=5,
                                             T_mult=2,
                                             eta_min=1e-12,
                                             last_epoch=-1,
                                             verbose=False)
-    criterion = nn.MSELoss()
-    criterion.to(device)
 
     writer = SummaryWriter(flush_secs=15) #tensorboardX writer
 
     def rerank_images(window):
+        '''Run through the full dataset and save the ranking for all entries'''
+        
         window.StatusText.setText('Ranking Images')
-        dataset = ImageDataSet(pd.read_csv('Data/ImageList.csv'),image_size,device,do_augmentation=False)
+        dataset = ImageDataSet(pd.read_csv('Data/ImageList.csv'),
+                                            image_size,device,
+                                            do_augmentation=False)
         dataloader = DataLoader(dataset,
                                 batch_size=full_set_batch_size,
                                 num_workers=0,
@@ -132,6 +136,12 @@ def trainer(window, Listings):
         return window
 
     def shuffle_ranked_pairs(trainset):
+        '''Return a list of ranked pairs shuffled to a different orders
+
+        The list of ranked pairs needs to have the pairs kept together, so most
+        of this code is just concerned with reshaping to two columns before
+        shuffling, then reshaping back to one column for the dataloader
+        '''
         # resort the paired examples to mix up the data
         train_csv = pd.read_csv('Data/RankedPairs.csv')
         sort_key = [x for x in range(len(trainset))]

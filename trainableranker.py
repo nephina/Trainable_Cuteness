@@ -131,7 +131,7 @@ def left_pref():
             left_select_count[0] = 0
 
     else:
-        list_indices = update_both_image(refinement=True)
+        list_indices = update_both_image(refinement=False)
 
 def right_pref():
     global list_indices
@@ -151,14 +151,14 @@ def right_pref():
             right_select_count[0] = 0
 
     else:
-        list_indices = update_both_image(refinement=True)
+        list_indices = update_both_image(refinement=False)
 
 def no_pref():
     global list_indices
     if first_prompt_run[0] == 1:
         list_indices = update_both_image(refinement=False)
     else:
-        list_indices = update_both_image(refinement=True)
+        list_indices = update_both_image(refinement=False)
 
 def remove_conflicts(pairwise_ranked_images):
 

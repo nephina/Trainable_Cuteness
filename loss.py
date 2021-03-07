@@ -1,8 +1,9 @@
 import torch
 
 def pair_order_loss(output,target):
-    '''
-    Pairs off couples of sequential predictioninstances in the batch, and then 
+    '''Returns the pairwise loss of a series of image pair rankings
+
+    Pairs off couples of sequential prediction instances in the batch, and then 
     computes a loss based on whether they are in the right order or not. If they
     are, loss is 0. If not, loss is proportional to how far apart they are.
     '''
@@ -27,7 +28,8 @@ def pair_order_loss(output,target):
     return(loss)
 
 def pairwise_loss(predictions,log_vars,ranks,criterion,loss_type):
-    '''
+    '''Returns the loss calculated from both pairwise and variational methods
+
     Pair loss isn't quite enough usually. There is a way out of that loss 
     function, and that is to rank everything exactly the same. So to mitigate 
     this, we can force the net to maintain a certain spread of ranking results 
@@ -86,9 +88,13 @@ def pairwise_loss(predictions,log_vars,ranks,criterion,loss_type):
         kldivloss = -0.5 * torch.sum(1 + log_vars - predictions**2 - log_vars.exp())
         loss = order_loss + (1*kldivloss)
 
+    else:
+        loss = order_loss
+        
     return loss, order_loss
 
+'''
+|  ||
 
-# |  ||
-
-# || |_
+|| |_
+'''
