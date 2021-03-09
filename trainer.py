@@ -69,7 +69,7 @@ def trainer(window, Listings):
     '''
 
     #Define the training characteristics
-    train_batch_size = 50
+    train_batch_size = 300
     full_set_batch_size = 50
     image_size = 256
 
@@ -95,7 +95,7 @@ def trainer(window, Listings):
     
     optimizer = torch.optim.AdamW(
         [param for param in model.parameters() if param.requires_grad == True],
-                                lr=0.001, 
+                                lr=0.02, 
                                 betas=(0.9, 0.999), 
                                 eps=1e-08, 
                                 weight_decay=0.01, 
@@ -167,7 +167,7 @@ def trainer(window, Listings):
     train_order_loss = 10e10
     train_std = 0
 
-    while (train_order_loss != 0):# or (1-train_std > 0.01) or (abs(train_mean) > 0.01):
+    while (train_order_loss != 0) or (1-train_std > 0.01): # or (abs(train_mean) > 0.01):
         
         trainset,trainloader = shuffle_ranked_pairs(trainset)
         train_loss, train_order_loss, train_mean, train_std = train(model, trainloader, optimizer, loss_type='orderandvariational')
@@ -180,7 +180,7 @@ def trainer(window, Listings):
         writer.add_scalar('Learning rate',scheduler._last_lr[0],epoch)
         epoch += 1
         
-        if epoch % 100 == 0:
+        if epoch % 1000 == 0:
             print('Reranking images')
             rerank_images(window)
             torch.save(model.state_dict(), 'RankPrediction-model.pkl')

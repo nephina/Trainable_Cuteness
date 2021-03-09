@@ -33,8 +33,8 @@ def get_saliency_map(image, saliency_map):
     image = image.data.cpu().numpy()
     saliency_map = saliency_map.data.cpu().numpy()
     
-    #saliency_map = saliency_map - saliency_map.min()
-    #saliency_map = saliency_map / saliency_map.max()
+    saliency_map = saliency_map - saliency_map.min()
+    saliency_map = saliency_map / saliency_map.max()
     saliency_map = np.uint8(saliency_map * 255).transpose(1, 2, 0)
     saliency_map = cv2.resize(saliency_map, (512,512))
 
@@ -116,7 +116,7 @@ class FullGrad():
         return input
 
     def saliency(self, image, target_class=None):
-        #FullGrad saliency
+        '''FullGrad saliency'''
 
         self.model.eval()
         input_grad, bias_grad = self.fullGradientDecompose(image, target_class=target_class)
@@ -156,6 +156,7 @@ class FullGradExtractor:
                 
                 # Register feature-gradient hooks for each layer
                 handle_g = m.register_backward_hook(self._extract_layer_grads)
+                #print(m.register_full_backward_hook(self._extract_layer_grads))
                 self.grad_handles.append(handle_g)
 
                 # Collect model biases
@@ -164,14 +165,15 @@ class FullGradExtractor:
 
 
     def _extract_layer_bias(self, module):
-        # extract bias of each layer
+        '''Extract bias of each layer
 
-        # for batchnorm, the overall "bias" is different 
-        # from batchnorm bias parameter. 
-        # Let m -> running mean, s -> running std
-        # Let w -> BN weights, b -> BN bias
-        # Then, ((x - m)/s)*w + b = x*w/s + (- m*w/s + b) 
-        # Thus (-m*w/s + b) is the effective bias of batchnorm
+        for batchnorm, the overall "bias" is different 
+        from batchnorm bias parameter. 
+        Let m -> running mean, s -> running std
+        Let w -> BN weights, b -> BN bias
+        Then, ((x - m)/s)*w + b = x*w/s + (- m*w/s + b) 
+        Thus (-m*w/s + b) is the effective bias of batchnorm
+        '''
 
         if isinstance(module, nn.BatchNorm2d):
             b = - (module.running_mean * module.weight 
@@ -183,17 +185,18 @@ class FullGradExtractor:
             return module.bias.data
 
     def getBiases(self):
-        # dummy function to get biases
+        '''Dummy function to get biases'''
+
         return self.biases
 
     def _extract_layer_grads(self, module, in_grad, out_grad):
-        # function to collect the gradient outputs
-        # from each layer
+        '''Function to collect the gradient outputs from each layer'''
 
         if not module.bias is None:
             self.feature_grads.append(out_grad[0])
 
     def getFeatureGrads(self, x, output_scalar):
+        '''Zero the gradients before regenerating them from an input'''
         
         # Empty feature grads list 
         self.feature_grads = []
@@ -220,7 +223,7 @@ def compute_saliency(dataloader,model,image_size):
         # Get saliency maps
         for i in range(data.size(0)):
             image = data[i].cpu()
-            image = unnormalize(image)
+            #image = unnormalize(image) #Why would we undo normalization?
             single_map = get_saliency_map(image, saliency_map[i])
             maps.append(single_map)
     return maps

@@ -88,7 +88,8 @@ def pairwise_loss(predictions,log_vars,ranks,loss_type):
 
         order_loss = pair_order_loss(rankings,ranks)
         kldivloss = -0.5 * torch.sum(1 + log_vars - predictions**2 - log_vars.exp())
-        loss = order_loss + (1*kldivloss)
+        beta = 1e-5
+        loss = order_loss + (beta*kldivloss)
 
     else:
         loss = order_loss
