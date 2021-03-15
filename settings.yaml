@@ -1,0 +1,13 @@
+# Interaction/active learning settings
+#-------------------------------------------------------------------------------
+choices_per_sess: 1 # The number of choices asked before retraining the AI
+window_imsize: 1200 # Adjust the size of the images to best fit your screen
+
+# AI settings
+#-------------------------------------------------------------------------------
+image_size: 256 # This should be a power of 2, because of NN pooling layers
+train_batch_size: 500 
+full_dataset_batch_size: 50 # This is for ranking all the images
+
+# Visualization settings
+#-------------------------------------------------------------------------------

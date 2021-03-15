@@ -8,11 +8,25 @@ try:
 except ImportError:
     from torch.utils.model_zoo import load_url as load_state_dict_from_url
 
-__all__ = ['CNNSingleValueRanker','ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
-           'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
+__all__ = ['CNNSingleValueRanker','ResNet', 'resnet18', 'resnet34', 'resnet50',
+           'resnet101','resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
            'wide_resnet50_2', 'wide_resnet101_2']
 
 #Define the net characteristics
+
+'''
+class ResNetRankingWrapper(nn.Module):
+    def __init__(self,resnet_type='resnet18'):
+        super(resnet18_variational_outputs, self).__init__()
+        self.resnet_base = resnet_base
+        self.linear_mu = nn.Linear(1000,1)
+        self.linear_log_var = nn.Linear(1000,1)
+    def forward(self, x):
+        x = self.resnet_base(x)
+        mu = self.linear_mu(F.relu(x))
+        log_var = self.linear_log_var(F.relu(x))
+        return mu, log_var
+'''
 
 class ConvBlock(nn.Module):
     def __init__(self,in_channels,out_channels,block_resolution_drop):
@@ -400,7 +414,7 @@ def resnet34(pretrained: bool = False, progress: bool = False, **kwargs: Any) ->
     """
     model = _resnet('resnet34', BasicBlock, [3, 4, 6, 3], pretrained, progress,
                    **kwargs)
-    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
+    return model
 
 
 def resnet50(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
@@ -412,7 +426,7 @@ def resnet50(pretrained: bool = False, progress: bool = False, **kwargs: Any) ->
     """
     model = _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress,
                    **kwargs)
-    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
+    return model
 
 def resnet101(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
     r"""ResNet-101 model from
@@ -423,7 +437,7 @@ def resnet101(pretrained: bool = False, progress: bool = False, **kwargs: Any) -
     """
     model = _resnet('resnet101', Bottleneck, [3, 4, 23, 3], pretrained, progress,
                    **kwargs)
-    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
+    return model
 
 def resnet152(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
     r"""ResNet-152 model from
@@ -434,8 +448,8 @@ def resnet152(pretrained: bool = False, progress: bool = False, **kwargs: Any) -
     """
     model = _resnet('resnet152', Bottleneck, [3, 8, 36, 3], pretrained, progress,
                    **kwargs)
-    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
-
+    return model
+    
 def resnext50_32x4d(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
     r"""ResNeXt-50 32x4d model from
     `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_
@@ -447,8 +461,8 @@ def resnext50_32x4d(pretrained: bool = False, progress: bool = False, **kwargs: 
     kwargs['width_per_group'] = 4
     model = _resnet('resnext50_32x4d', Bottleneck, [3, 4, 6, 3],
                    pretrained, progress, **kwargs)
-    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
-
+    return model
+    
 def resnext101_32x8d(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
     r"""ResNeXt-101 32x8d model from
     `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_
@@ -460,8 +474,8 @@ def resnext101_32x8d(pretrained: bool = False, progress: bool = False, **kwargs:
     kwargs['width_per_group'] = 8
     model = _resnet('resnext101_32x8d', Bottleneck, [3, 4, 23, 3],
                    pretrained, progress, **kwargs)
-    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
-
+    return model
+    
 def wide_resnet50_2(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
     r"""Wide ResNet-50-2 model from
     `"Wide Residual Networks" <https://arxiv.org/pdf/1605.07146.pdf>`_
@@ -476,8 +490,8 @@ def wide_resnet50_2(pretrained: bool = False, progress: bool = False, **kwargs: 
     kwargs['width_per_group'] = 64 * 2
     model = _resnet('wide_resnet50_2', Bottleneck, [3, 4, 6, 3],
                    pretrained, progress, **kwargs)
-    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
-
+    return model
+    
 def wide_resnet101_2(pretrained: bool = False, progress: bool = False, **kwargs: Any) -> ResNet:
     r"""Wide ResNet-101-2 model from
     `"Wide Residual Networks" <https://arxiv.org/pdf/1605.07146.pdf>`_
@@ -492,4 +506,4 @@ def wide_resnet101_2(pretrained: bool = False, progress: bool = False, **kwargs:
     kwargs['width_per_group'] = 64 * 2
     model = _resnet('wide_resnet101_2', Bottleneck, [3, 4, 23, 3],
                    pretrained, progress, **kwargs)
-    return nn.Sequential(model, nn.ReLU(), nn.Linear(1000,1))
+    return model

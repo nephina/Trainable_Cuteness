@@ -21,8 +21,8 @@ def get_random_image_pair(image_list):
 def get_closest_pair(image_list):
     '''Return a pair of images that are very close in rank
 
-    Sort the images by rank, from that generate a list of deltas between image ranks
-    From these image pair rank deltas, pull the smallest 20%
+    Sort images by rank, make list of the rank deltas between consecutive images
+    From these image rank deltas, extract smallest 20% and their assoc. images
     Return a random pair from this 20% set
     '''
 
@@ -34,25 +34,34 @@ def get_closest_pair(image_list):
     deltas.sort_values(by=[0],inplace=True,axis=1)
     deltas = deltas.transpose()
     deltas = deltas.reset_index(drop=True)
-    small_delta_random_sample_index = random.sample(range(0,int((len(deltas)*0.2))),1)
+    num_samples = int((len(deltas)*0.2))
+    small_delta_random_sample_index = random.sample(range(0,num_samples),1)
     list_indices = [int(deltas[1][small_delta_random_sample_index]),
                     int(deltas[1][small_delta_random_sample_index])+1]
-    return image_list.iloc[list_indices[0]],image_list.iloc[list_indices[1]],list_indices
+    return (image_list.iloc[list_indices[0]],
+           image_list.iloc[list_indices[1]],
+           list_indices)
 
 def get_adjacent_random_pair(image_list):
-    '''Return a pair of images right next to each other from a random location in the list'''
+    '''Return a consecutive pair of images from a random location in the list'''
 
     image_list.sort_values(by=['Rating'],inplace=True,ascending=False)
     list_indices = [None,None]
     list_indices[0] = random.randint(0,len(image_list)-1)
     list_indices[1] = list_indices[0]+1
-    return image_list.iloc[list_indices[0]],image_list.iloc[list_indices[1]],list_indices
+    return (image_list.iloc[list_indices[0]],
+           image_list.iloc[list_indices[1]],
+           list_indices)
 
 def get_topend_close_pair(image_list):
-    '''Return a pair of images right next to each other from a random location in the top 200 list entries'''
+    '''Return a pair of images right next to each other from a random location
+    in the top 200 list entries
+    '''
 
     image_list.sort_values(by=['Rating'],inplace=True,ascending=False)
     list_indices = [None,None]
     list_indices[0] = random.randint(0,200)
     list_indices[1] = list_indices[0]+1
-    return image_list.iloc[list_indices[0]],image_list.iloc[list_indices[1]],list_indices
+    return (image_list.iloc[list_indices[0]],
+           image_list.iloc[list_indices[1]],
+           list_indices)

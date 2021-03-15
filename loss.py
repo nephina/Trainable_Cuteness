@@ -54,9 +54,10 @@ def pairwise_loss(predictions,log_vars,ranks,loss_type):
             loss = order_loss+stdev_loss
 
     elif loss_type == 'orderandcenterednormal':
-        
-        sorted_softlog_predictions = torch.log_softmax(predictions.sort().values,dim=0)
-        normal_dist_softlog = torch.log_softmax(torch.randn_like(predictions).to(torch.device('cuda:0')).sort().values,dim=0)
+        sorted_preds = predictions.sort().values
+        sorted_softlog_predictions = torch.log_softmax(sorted_preds, dim=0)
+        randn_sorted = torch.randn_like(predictions).cuda().sort().values
+        normal_dist_softlog = torch.log_softmax(randn_sorted,dim=0)
         kldiv = torch.nn.KLDivLoss(reduction='batchmean', log_target=True)
         centered_normal_loss = kldiv(
                                     sorted_softlog_predictions, 
@@ -87,7 +88,8 @@ def pairwise_loss(predictions,log_vars,ranks,loss_type):
         rankings = predictions + (std * epsilon)
 
         order_loss = pair_order_loss(rankings,ranks)
-        kldivloss = -0.5 * torch.sum(1 + log_vars - predictions**2 - log_vars.exp())
+        kldivloss = torch.sum(1 + log_vars - predictions**2 - log_vars.exp())
+        kldivloss *= -0.5
         beta = 1e-5
         loss = order_loss + (beta*kldivloss)
 

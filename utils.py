@@ -42,8 +42,9 @@ def get_saliency_map(image, saliency_map):
     image = image / image.max()
     image = np.uint8(image * 255).transpose(1,2,0)
     image = cv2.resize(image, (512, 512))
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) #convert to grayscale
+    #convert the gray image into three-channel rgb so we can add the rgb heatmap
+    image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB) 
 
     # Apply colormap (STOP USING JET!!)
     # https://jakevdp.github.io/blog/2014/10/16/how-bad-is-your-colormap/
@@ -78,9 +79,11 @@ class FullGrad():
         
         # Select the output unit corresponding to the target class
         # -1 compensates for negation in nll_loss function
-        output_scalar = -1. * F.nll_loss(out, target_class.flatten(), reduction='sum')
-
-        input_gradient, feature_gradients = self.model_ext.getFeatureGrads(image, output_scalar)
+        output_scalar = -1. * F.nll_loss(out,
+                                         target_class.flatten(),
+                                         reduction='sum')
+        grads_tuple = self.model_ext.getFeatureGrads(image, output_scalar)
+        input_gradient, feature_gradients = grads_tuple
 
         # Compute feature-gradients \times bias 
         bias_times_gradients = []
@@ -119,7 +122,7 @@ class FullGrad():
         '''FullGrad saliency'''
 
         self.model.eval()
-        input_grad, bias_grad = self.fullGradientDecompose(image, target_class=target_class)
+        input_grad, bias_grad = self.fullGradientDecompose(image, target_class)
 
         # Input-gradient * image
         grd = input_grad * image
@@ -134,7 +137,10 @@ class FullGrad():
             # Select only Conv layers
             if len(bias_grad[i].size()) == len(im_size): 
                 temp = self._postProcess(bias_grad[i])
-                gradient = F.interpolate(temp, size=(im_size[2], im_size[3]), mode = 'bilinear', align_corners=True)
+                gradient = F.interpolate(temp,
+                                         size=(im_size[2],im_size[3]),
+                                         mode = 'bilinear',
+                                         align_corners=True)
                 cam += gradient.sum(1, keepdim=True)
 
         return cam
@@ -152,7 +158,9 @@ class FullGradExtractor:
 
         # Iterate through layers
         for m in self.model.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear) or isinstance(m, nn.BatchNorm2d):
+            if (isinstance(m, nn.Conv2d) or
+                isinstance(m, nn.Linear) or
+                isinstance(m, nn.BatchNorm2d)):
                 
                 # Register feature-gradient hooks for each layer
                 handle_g = m.register_backward_hook(self._extract_layer_grads)
@@ -203,7 +211,7 @@ class FullGradExtractor:
 
         self.model.zero_grad()
         # Gradients w.r.t. input
-        input_gradients = torch.autograd.grad(outputs = output_scalar, inputs = x)[0]
+        input_gradients = torch.autograd.grad(output_scalar, x)[0]
 
         return input_gradients, self.feature_grads
 
